@@ -1,0 +1,30 @@
+---
+output: github_document
+---
+
+# stringArt <img src="man/figures/logo.png" align="right" width="120" />
+
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/fsbmat-ufv/stringArt/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/fsbmat-ufv/stringArt/actions)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+<!-- badges: end -->
+
+O pacote **stringArt** fornece ferramentas para criar e visualizar figuras geométricas
+do tipo *String Art* — aquelas formações criadas com fios e pregos que resultam
+em belos padrões matemáticos.  
+O pacote é voltado para aplicações **didáticas e artísticas**, podendo ser usado
+em contextos de ensino de **Geometria Analítica, Matemática Visual e Programação Gráfica em R**.
+
+---
+
+## Instalação
+
+Você pode instalar a versão de desenvolvimento diretamente do GitHub:
+
+```r
+# Instalar o pacote devtools, se necessário
+# install.packages("devtools")
+
+devtools::install_github("fsbmat-ufv/stringArt")
+```
