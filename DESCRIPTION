@@ -1,12 +1,15 @@
 Package: stringArt
-Title: Ferramentas para Geração de Figuras de String Art
+Title: Ferramentas para Geracao de Figuras de String Art
 Version: 0.1.0
 Authors@R: 
-    person("Fernando", "de Souza Bastos", email = "fernando@ufv.br", role = c("aut", "cre"))
-Description: O pacote stringArt fornece funções para criar e visualizar figuras geométricas 
-    do tipo String Art, como círculos, retas, elipses e parábolas. As funções retornam 
-    coordenadas e comprimentos de fio, permitindo aplicações educacionais em Matemática, 
-    Geometria Analítica e Artes Visuais.
+    c(
+      person("Ivo", "Moreira Barbosa", email = "ivo.barbosa@ufv.br", role = "aut"),
+      person("Fernando", "de Souza Bastos", email = "fernando@ufv.br", role = c("aut", "cre"))
+    )
+Description: O pacote stringArt fornece funcoes para criar e visualizar figuras geometricas 
+    do tipo String Art, como circulos, retas, elipses e parabolas. As funcoes retornam 
+    coordenadas e comprimentos de fio, permitindo aplicacoes educacionais em Matematica, 
+    Geometria Analitica e Artes Visuais.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
