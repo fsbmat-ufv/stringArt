@@ -2,49 +2,89 @@
 % Please edit documentation in R/stregion.R
 \name{stregion}
 \alias{stregion}
-\title{Gera uma figura de String Art a partir de uma regiao em uma malha}
+\title{Gera uma figura de String Art preenchida a partir de um contorno}
 \usage{
 stregion(
-  x_seq,
-  y_seq,
-  inside_func,
-  n_segments = 500,
+  contorno,
+  n = 100,
+  k = 4,
   col = "red",
-  lwd = 1,
+  lwd = 0.6,
+  draw_border = TRUE,
+  border_col = col,
+  border_lwd = 1.2,
+  show_points = FALSE,
   pch_pregos = 19,
   cex_pregos = 0.4,
   col_pregos = "gray20",
-  plot = TRUE
+  show_labels = FALSE,
+  cex_labels = 0.6,
+  label_col = "black",
+  verbose = FALSE,
+  add = FALSE,
+  plot = TRUE,
+  xlim = NULL,
+  ylim = NULL
 )
 }
 \arguments{
-\item{x_seq}{Vetor numerico com as coordenadas x da malha.}
+\item{contorno}{Data frame com colunas \code{x} e \code{y} definindo o contorno.}
 
-\item{y_seq}{Vetor numerico com as coordenadas y da malha.}
+\item{n}{Inteiro par >= 4. Numero de pregos no contorno.}
 
-\item{inside_func}{Funcao que recebe vetores \code{x} e \code{y} e retorna um vetor
-logico indicando quais pontos pertencem a regiao.}
+\item{k}{Inteiro >= 1. Numero de passagens de varredura. Cada passagem
+usa um offset diferente, aumentando a densidade de preenchimento.
+Use \code{k = 1} para preenchimento simples (cordas paralelas), \code{k = 3}
+a \code{k = 6} para preenchimento denso.}
 
-\item{n_segments}{Inteiro. Numero de segmentos a serem desenhados.}
-
-\item{col}{Cor do barbante.}
+\item{col}{Cor das linhas.}
 
 \item{lwd}{Espessura das linhas.}
 
-\item{pch_pregos}{Simbolo dos pregos.}
+\item{draw_border}{Logico. Desenha o contorno.}
 
-\item{cex_pregos}{Tamanho dos pregos.}
+\item{border_col}{Cor do contorno.}
 
-\item{col_pregos}{Cor dos pregos.}
+\item{border_lwd}{Espessura do contorno.}
 
-\item{plot}{Logico. Se \code{TRUE}, desenha a figura.}
+\item{show_points}{Logico. Desenha os pregos.}
+
+\item{pch_pregos, cex_pregos, col_pregos}{Simbolo, tamanho e cor dos pregos.}
+
+\item{show_labels}{Logico. Escreve indices dos pregos.}
+
+\item{cex_labels, label_col}{Tamanho e cor dos rotulos.}
+
+\item{verbose}{Logico. Imprime conexoes no console.}
+
+\item{add}{Logico. Adiciona ao grafico existente.}
+
+\item{plot}{Logico. Desenha a figura.}
+
+\item{xlim, ylim}{Limites dos eixos (so quando \code{add = FALSE}).}
 }
 \value{
-Invisivelmente, uma lista com os pregos da regiao e as conexoes.
+Invisivelmente, lista com \code{pregos}, \code{conexoes} e
+\code{comprimento_total}.
 }
 \description{
-A funcao \code{stregion()} cria uma figura do tipo \emph{String Art} a partir de uma
-malha regular de pregos no plano. Uma funcao logica define quais pregos
-pertencem a regiao de interesse, e segmentos sao tracados entre pregos dessa
-regiao, produzindo um preenchimento visual.
+Distribui \code{n} pregos ao longo do perimetro do contorno e conecta cada
+prego ao seu \strong{oposto} no contorno (prego \code{i + floor(n/2)}), de forma
+que cada corda \strong{atravessa o interior} da regiao. Para aumentar a
+densidade de preenchimento, sao feitas \code{k} passagens com offsets de
+0 a \code{k-1}, produzindo um feixe de cordas inclinadas que cobrem toda
+a area como um tecido de linhas entrecruzadas.
+}
+\examples{
+# Circulo preenchido
+ct <- contorno_circulo(r = 1)
+stregion(ct, n = 100, k = 4, col = "steelblue", lwd = 0.6)
+
+# Elipse preenchida
+ct <- contorno_elipse(a = 1.5, b = 0.8)
+stregion(ct, n = 120, k = 5, col = "firebrick", lwd = 0.6)
+
+}
+\seealso{
+\code{\link[=stmushroom]{stmushroom()}}
 }

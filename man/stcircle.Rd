@@ -4,58 +4,101 @@
 \alias{stcircle}
 \title{Gera uma figura de String Art circular}
 \usage{
-stcircle(n, k, r, col, lwd, plot = TRUE)
+stcircle(
+  n = 20,
+  k = 3,
+  r = 1,
+  col = "blue",
+  lwd = 1,
+  plot = TRUE,
+  show_points = TRUE,
+  cex_pregos = 0.8,
+  col_pregos = "black",
+  show_labels = FALSE,
+  cex_labels = 0.7,
+  label_col = "black",
+  verbose = TRUE
+)
 }
 \arguments{
-\item{n}{Inteiro. Numero de pregos (pontos igualmente espacado sobre o circulo).
-Deve ser pelo menos 3.}
+\item{n}{Inteiro maior ou igual a 3. Número de pregos igualmente espaçados
+sobre a circunferência.}
 
-\item{k}{Inteiro. Passo de ligacao entre os pregos. Por exemplo, se \code{k = 2},
-cada prego e ligado ao segundo prego adiante.}
+\item{k}{Inteiro entre 1 e \code{n - 1}. Salto modular da conexão.
+A conexão é dada por \code{j <- (i + k - 1) \%\% n + 1}.}
 
-\item{r}{Numerico. Raio do circulo.}
+\item{r}{Número positivo. Raio da circunferência.}
 
-\item{col}{Cor das linhas do barbante. Pode ser nome de cor (ex: \code{"blue"})
-ou codigo hexadecimal (ex: \code{"#1E90FF"}).}
+\item{col}{Cor das conexões.}
 
-\item{lwd}{Espessura das linhas do barbante.}
+\item{lwd}{Número positivo. Espessura das conexões.}
 
-\item{plot}{Logico. Se \code{TRUE} (padrao), o circulo e as conexoes sao desenhadas.}
+\item{plot}{Lógico. Se \code{TRUE}, desenha a figura.}
+
+\item{show_points}{Lógico. Se \code{TRUE}, mostra os pregos.}
+
+\item{cex_pregos}{Número positivo. Tamanho dos pregos no gráfico.}
+
+\item{col_pregos}{Cor dos pregos.}
+
+\item{show_labels}{Lógico. Se \code{TRUE}, mostra os rótulos dos pregos.}
+
+\item{cex_labels}{Número positivo. Tamanho dos rótulos.}
+
+\item{label_col}{Cor dos rótulos.}
+
+\item{verbose}{Lógico. Se \code{TRUE}, informa o comprimento total do barbante
+e uma observação sobre a estrutura da figura.}
 }
 \value{
-Invisivelmente, uma lista contendo:
+Invisivelmente, uma lista com:
 \describe{
-\item{pregos}{Data frame com coordenadas (x, y) dos pregos.}
-\item{conexoes}{Data frame com coordenadas iniciais e finais e comprimento de cada segmento.}
-\item{comprimento_total}{Valor numerico com o comprimento total do barbante.}
+\item{pregos}{\code{data.frame} com as colunas \code{indice}, \code{x} e \code{y}.}
+\item{conexoes}{\code{data.frame} com as colunas \code{prego_inicial},
+\code{prego_final}, \code{x_inicial}, \code{y_inicial}, \code{x_final}, \code{y_final}
+e \code{comprimento}.}
+\item{comprimento_total}{Número com o comprimento total do barbante.}
 }
 }
 \description{
-A funcao \code{stcircle()} cria uma figura do tipo \emph{String Art} em formato circular,
-conectando pontos (pregos) igualmente espacado sobre um circulo de raio definido.
-Cada prego e conectado ao prego \code{k} posicoes a frente, formando padroes geometricos
-visualmente interessantes. Alem disso, a funcao calcula o comprimento total
-do barbante necessario e retorna as coordenadas e conexoes utilizadas.
+A função \code{stcircle()} constrói uma figura de \emph{String Art} sobre uma
+circunferência, posicionando \code{n} pregos igualmente espaçados e conectando
+cada prego ao prego \code{k} posições à frente, segundo uma regra modular fixa.
+A função também calcula o comprimento total do barbante e retorna,
+invisivelmente, os dados completos da construção.
 }
 \details{
-A funcao constroi um circulo de raio \code{r} com \code{n} pregos igualmente distribuidos,
-e realiza conexoes seguindo o padrao determinado por \code{k}. Alem de gerar o grafico
-(opcionalmente), ela tambem retorna uma lista contendo:
-\itemize{
-\item \code{pregos}: coordenadas dos pregos (x, y);
-\item \code{conexoes}: data frame com as conexoes e comprimentos individuais;
-\item \code{comprimento_total}: comprimento total do barbante utilizado.
-}
+A construção posiciona os pregos sobre uma circunferência de raio \code{r},
+centrada em \verb{(0, 0)}, numerando-os de \code{1} a \code{n} no sentido anti-horário,
+a partir do ponto \verb{(r, 0)}.
+
+A regra de conexão é auditável e dada por
+\code{j <- (i + k - 1) \%\% n + 1},
+ou seja, cada prego \code{i} é ligado ao prego \code{k} posições à frente.
+
+Quando \code{mdc(n, k) = 1}, a figura percorre todos os pregos em um único ciclo.
+Quando \code{mdc(n, k) > 1}, a construção se decompõe em ciclos independentes,
+ainda obedecendo exatamente à mesma regra modular.
 }
 \examples{
-# Exemplo basico com 20 pregos, conectando cada prego ao terceiro a frente
+# Exemplo básico
 stcircle(n = 20, k = 3, r = 1, col = "blue", lwd = 1.2)
 
-# Exemplo sem exibir o grafico
-res <- stcircle(n = 10, k = 2, r = 1, col = "red", lwd = 1, plot = FALSE)
-res$comprimento_total
+# Exemplo com rótulos dos pregos
+stcircle(
+  n = 12, k = 5, r = 1,
+  col = "firebrick", lwd = 1,
+  show_labels = TRUE
+)
 
-}
-\seealso{
-Outras funcoes da serie StringArt, como \code{stline()} e \code{stellipse()} (em desenvolvimento).
+# Exemplo sem plot
+res <- stcircle(
+  n = 10, k = 2, r = 1,
+  col = "darkgreen", lwd = 1,
+  plot = FALSE, verbose = FALSE
+)
+res$comprimento_total
+head(res$pregos)
+head(res$conexoes)
+
 }

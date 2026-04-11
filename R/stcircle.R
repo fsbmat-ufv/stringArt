@@ -1,102 +1,263 @@
 #' Gera uma figura de String Art circular
 #'
-#' A funcao `stcircle()` cria uma figura do tipo *String Art* em formato circular,
-#' conectando pontos (pregos) igualmente espacado sobre um circulo de raio definido.
-#' Cada prego e conectado ao prego `k` posicoes a frente, formando padroes geometricos
-#' visualmente interessantes. Alem disso, a funcao calcula o comprimento total
-#' do barbante necessario e retorna as coordenadas e conexoes utilizadas.
+#' A função `stcircle()` constrói uma figura de *String Art* sobre uma
+#' circunferência, posicionando `n` pregos igualmente espaçados e conectando
+#' cada prego ao prego `k` posições à frente, segundo uma regra modular fixa.
+#' A função também calcula o comprimento total do barbante e retorna,
+#' invisivelmente, os dados completos da construção.
 #'
-#' @param n Inteiro. Numero de pregos (pontos igualmente espacado sobre o circulo).
-#' Deve ser pelo menos 3.
-#' @param k Inteiro. Passo de ligacao entre os pregos. Por exemplo, se `k = 2`,
-#' cada prego e ligado ao segundo prego adiante.
-#' @param r Numerico. Raio do circulo.
-#' @param col Cor das linhas do barbante. Pode ser nome de cor (ex: `"blue"`)
-#' ou codigo hexadecimal (ex: `"#1E90FF"`).
-#' @param lwd Espessura das linhas do barbante.
-#' @param plot Logico. Se `TRUE` (padrao), o circulo e as conexoes sao desenhadas.
+#' @param n Inteiro maior ou igual a 3. Número de pregos igualmente espaçados
+#'   sobre a circunferência.
+#' @param k Inteiro entre 1 e `n - 1`. Salto modular da conexão.
+#'   A conexão é dada por `j <- (i + k - 1) %% n + 1`.
+#' @param r Número positivo. Raio da circunferência.
+#' @param col Cor das conexões.
+#' @param lwd Número positivo. Espessura das conexões.
+#' @param plot Lógico. Se `TRUE`, desenha a figura.
+#' @param show_points Lógico. Se `TRUE`, mostra os pregos.
+#' @param cex_pregos Número positivo. Tamanho dos pregos no gráfico.
+#' @param col_pregos Cor dos pregos.
+#' @param show_labels Lógico. Se `TRUE`, mostra os rótulos dos pregos.
+#' @param cex_labels Número positivo. Tamanho dos rótulos.
+#' @param label_col Cor dos rótulos.
+#' @param verbose Lógico. Se `TRUE`, informa o comprimento total do barbante
+#'   e uma observação sobre a estrutura da figura.
 #'
 #' @details
-#' A funcao constroi um circulo de raio `r` com `n` pregos igualmente distribuidos,
-#' e realiza conexoes seguindo o padrao determinado por `k`. Alem de gerar o grafico
-#' (opcionalmente), ela tambem retorna uma lista contendo:
-#' \itemize{
-#'   \item `pregos`: coordenadas dos pregos (x, y);
-#'   \item `conexoes`: data frame com as conexoes e comprimentos individuais;
-#'   \item `comprimento_total`: comprimento total do barbante utilizado.
-#' }
+#' A construção posiciona os pregos sobre uma circunferência de raio `r`,
+#' centrada em `(0, 0)`, numerando-os de `1` a `n` no sentido anti-horário,
+#' a partir do ponto `(r, 0)`.
 #'
-#' @return Invisivelmente, uma lista contendo:
+#' A regra de conexão é auditável e dada por
+#' `j <- (i + k - 1) %% n + 1`,
+#' ou seja, cada prego `i` é ligado ao prego `k` posições à frente.
+#'
+#' Quando `mdc(n, k) = 1`, a figura percorre todos os pregos em um único ciclo.
+#' Quando `mdc(n, k) > 1`, a construção se decompõe em ciclos independentes,
+#' ainda obedecendo exatamente à mesma regra modular.
+#'
+#' @return Invisivelmente, uma lista com:
 #' \describe{
-#'   \item{pregos}{Data frame com coordenadas (x, y) dos pregos.}
-#'   \item{conexoes}{Data frame com coordenadas iniciais e finais e comprimento de cada segmento.}
-#'   \item{comprimento_total}{Valor numerico com o comprimento total do barbante.}
+#'   \item{pregos}{`data.frame` com as colunas `indice`, `x` e `y`.}
+#'   \item{conexoes}{`data.frame` com as colunas `prego_inicial`,
+#'   `prego_final`, `x_inicial`, `y_inicial`, `x_final`, `y_final`
+#'   e `comprimento`.}
+#'   \item{comprimento_total}{Número com o comprimento total do barbante.}
 #' }
 #'
 #' @examples
-#' # Exemplo basico com 20 pregos, conectando cada prego ao terceiro a frente
+#' # Exemplo básico
 #' stcircle(n = 20, k = 3, r = 1, col = "blue", lwd = 1.2)
 #'
-#' # Exemplo sem exibir o grafico
-#' res <- stcircle(n = 10, k = 2, r = 1, col = "red", lwd = 1, plot = FALSE)
-#' res$comprimento_total
+#' # Exemplo com rótulos dos pregos
+#' stcircle(
+#'   n = 12, k = 5, r = 1,
+#'   col = "firebrick", lwd = 1,
+#'   show_labels = TRUE
+#' )
 #'
-#' @seealso
-#' Outras funcoes da serie StringArt, como `stline()` e `stellipse()` (em desenvolvimento).
+#' # Exemplo sem plot
+#' res <- stcircle(
+#'   n = 10, k = 2, r = 1,
+#'   col = "darkgreen", lwd = 1,
+#'   plot = FALSE, verbose = FALSE
+#' )
+#' res$comprimento_total
+#' head(res$pregos)
+#' head(res$conexoes)
 #'
 #' @importFrom graphics plot points segments lines text
 #' @export
-stcircle <- function(n, k, r, col, lwd, plot = TRUE) {
-  if (n < 3) stop("E necessario pelo menos 3 pregos.")
+stcircle <- function(n = 20, k = 3, r = 1,
+                     col = "blue", lwd = 1,
+                     plot = TRUE,
+                     show_points = TRUE,
+                     cex_pregos = 0.8,
+                     col_pregos = "black",
+                     show_labels = FALSE,
+                     cex_labels = 0.7,
+                     label_col = "black",
+                     verbose = TRUE) {
 
-  # Angulos para os pregos
-  theta <- seq(0, 2 * pi, length.out = n + 1)[- (n + 1)]
+  #---------------------------------------------------------------------------
+  # Input checks
+  #---------------------------------------------------------------------------
+  if (!is.numeric(n) || length(n) != 1L || is.na(n) ||
+      n != as.integer(n) || n < 3L) {
+    stop("`n` must be a single integer greater than or equal to 3.")
+  }
 
-  # Coordenadas dos pregos
-  x <- r * cos(theta)
-  y <- r * sin(theta)
+  if (!is.numeric(k) || length(k) != 1L || is.na(k) ||
+      k != as.integer(k) || k < 1L) {
+    stop("`k` must be a single positive integer.")
+  }
 
-  # Vetores para armazenar comprimento de barbante
-  total_length <- 0
-  conexoes <- data.frame(
-    x1 = numeric(n),
-    y1 = numeric(n),
-    x2 = numeric(n),
-    y2 = numeric(n),
-    comprimento = numeric(n)
+  if (!is.numeric(r) || length(r) != 1L || is.na(r) || r <= 0) {
+    stop("`r` must be a single positive number.")
+  }
+
+  if (!is.numeric(lwd) || length(lwd) != 1L || is.na(lwd) || lwd <= 0) {
+    stop("`lwd` must be a single positive number.")
+  }
+
+  if (!is.logical(plot) || length(plot) != 1L || is.na(plot)) {
+    stop("`plot` must be TRUE or FALSE.")
+  }
+
+  if (!is.logical(show_points) || length(show_points) != 1L || is.na(show_points)) {
+    stop("`show_points` must be TRUE or FALSE.")
+  }
+
+  if (!is.logical(show_labels) || length(show_labels) != 1L || is.na(show_labels)) {
+    stop("`show_labels` must be TRUE or FALSE.")
+  }
+
+  if (!is.logical(verbose) || length(verbose) != 1L || is.na(verbose)) {
+    stop("`verbose` must be TRUE or FALSE.")
+  }
+
+  if (!is.numeric(cex_pregos) || length(cex_pregos) != 1L ||
+      is.na(cex_pregos) || cex_pregos <= 0) {
+    stop("`cex_pregos` must be a single positive number.")
+  }
+
+  if (!is.numeric(cex_labels) || length(cex_labels) != 1L ||
+      is.na(cex_labels) || cex_labels <= 0) {
+    stop("`cex_labels` must be a single positive number.")
+  }
+
+  n <- as.integer(n)
+  k <- as.integer(k)
+
+  if (k >= n) {
+    stop("`k` must satisfy 1 <= k <= n - 1.")
+  }
+
+  #---------------------------------------------------------------------------
+  # Auxiliary function
+  #---------------------------------------------------------------------------
+  gcd_int <- function(a, b) {
+    a <- abs(as.integer(a))
+    b <- abs(as.integer(b))
+    while (b != 0L) {
+      tmp <- b
+      b <- a %% b
+      a <- tmp
+    }
+    a
+  }
+
+  #---------------------------------------------------------------------------
+  # Nail positions
+  #---------------------------------------------------------------------------
+  theta <- seq(0, 2 * pi, length.out = n + 1L)[-(n + 1L)]
+
+  pregos <- data.frame(
+    indice = seq_len(n),
+    x = r * cos(theta),
+    y = r * sin(theta)
   )
 
-  # Plotar o circulo e os pregos
+  #---------------------------------------------------------------------------
+  # Connections following the modular jump rule
+  #---------------------------------------------------------------------------
+  prego_inicial <- seq_len(n)
+  prego_final <- ((prego_inicial + k - 1L) %% n) + 1L
+
+  conexoes <- data.frame(
+    prego_inicial = prego_inicial,
+    prego_final = prego_final,
+    x_inicial = pregos$x[prego_inicial],
+    y_inicial = pregos$y[prego_inicial],
+    x_final = pregos$x[prego_final],
+    y_final = pregos$y[prego_final]
+  )
+
+  conexoes$comprimento <- sqrt(
+    (conexoes$x_final - conexoes$x_inicial)^2 +
+      (conexoes$y_final - conexoes$y_inicial)^2
+  )
+
+  comprimento_total <- sum(conexoes$comprimento)
+
+  #---------------------------------------------------------------------------
+  # Plot
+  #---------------------------------------------------------------------------
   if (plot) {
-    plot(x, y, type = "n", asp = 1, xlab = "", ylab = "", axes = FALSE,
-         main = paste("String Art com", n, "pregos"))
-    points(x, y, pch = 19, col = "black")
-  }
+    margem <- 0.15 * r
+    lims <- c(-r - margem, r + margem)
 
-  # Conectar os pregos e calcular comprimento do barbante
-  for (i in 1:n) {
-    j <- (i + k - 1) %% n + 1
+    graphics::plot(
+      NA, NA,
+      xlim = lims, ylim = lims,
+      asp = 1,
+      xlab = "", ylab = "",
+      axes = FALSE
+    )
 
-    if (plot) {
-      segments(x[i], y[i], x[j], y[j], col = col, lwd = lwd)
+    # Circumference outline
+    tt <- seq(0, 2 * pi, length.out = 500L)
+    graphics::lines(r * cos(tt), r * sin(tt), col = "grey80", lty = 3)
+
+    # String connections
+    graphics::segments(
+      x0 = conexoes$x_inicial,
+      y0 = conexoes$y_inicial,
+      x1 = conexoes$x_final,
+      y1 = conexoes$y_final,
+      col = col,
+      lwd = lwd
+    )
+
+    # Nails
+    if (show_points) {
+      graphics::points(
+        pregos$x, pregos$y,
+        pch = 19,
+        cex = cex_pregos,
+        col = col_pregos
+      )
     }
 
-    len <- sqrt((x[j] - x[i])^2 + (y[j] - y[i])^2)
-    total_length <- total_length + len
-
-    conexoes[i, ] <- c(x[i], y[i], x[j], y[j], len)
+    # Labels
+    if (show_labels) {
+      fator_rotulo <- 1.08
+      graphics::text(
+        x = fator_rotulo * pregos$x,
+        y = fator_rotulo * pregos$y,
+        labels = pregos$indice,
+        cex = cex_labels,
+        col = label_col
+      )
+    }
   }
 
-  message(sprintf("Comprimento total de barbante: %.2f unidades", total_length))
+  #---------------------------------------------------------------------------
+  # Verbose output
+  #---------------------------------------------------------------------------
+  if (verbose) {
+    message(sprintf(
+      "Total string length: %.4f units.",
+      comprimento_total
+    ))
 
-  # Vetor de conexoes descritivas
-  conexoes_texto <- paste0("Prego ", 1:n, " -> Prego ", ((1:n + k - 1) %% n) + 1)
-  cat(paste(conexoes_texto, collapse = "\n"), "\n")
+    d <- gcd_int(n, k)
+    if (d == 1L) {
+      message("The modular rule generates a single cycle through all nails.")
+    } else {
+      message(sprintf(
+        "The modular rule generates %d independent cycles (gcd(n, k) = %d).",
+        d, d
+      ))
+    }
+  }
 
-  # Retorna invisivelmente os resultados
+  #---------------------------------------------------------------------------
+  # Invisible return
+  #---------------------------------------------------------------------------
   invisible(list(
-    pregos = data.frame(x = x, y = y),
+    pregos = pregos,
     conexoes = conexoes,
-    comprimento_total = total_length
+    comprimento_total = comprimento_total
   ))
 }
