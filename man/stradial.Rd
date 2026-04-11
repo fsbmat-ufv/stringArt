@@ -2,90 +2,149 @@
 % Please edit documentation in R/stradial.R
 \name{stradial}
 \alias{stradial}
-\title{Gera uma figura radial de String Art com modulos triangulares}
+\title{Gera uma figura radial de String Art com módulos triangulares}
 \usage{
 stradial(
   n,
   k,
+  ...,
   m = 1,
   r = 1.2,
   spread = pi/5,
   col = rainbow(m),
   lwd = 1,
-  border_col = "black",
-  border_lwd = 1.1,
-  show_points = TRUE,
-  point_col = "black",
-  point_bg = "white",
-  cex_points = 0.8,
-  pch_points = 21,
+  plot = TRUE,
+  show_points = FALSE,
+  cex_pregos = 0.8,
+  col_pregos = "black",
   show_labels = FALSE,
   cex_labels = 0.7,
   label_col = "black",
-  verbose = FALSE,
+  verbose = TRUE,
+  border_col = "black",
+  border_lwd = 1.1,
+  point_bg = "white",
+  pch_points = 21,
   show_center = TRUE,
   center_col = "black",
-  cex_center = 0.9,
-  plot = TRUE
+  cex_center = 0.9
 )
 }
 \arguments{
-\item{n}{Inteiro. Numero de pregos em cada modulo triangular.}
+\item{n}{Inteiro maior ou igual a 3. Número de pregos em cada módulo triangular.}
 
-\item{k}{Inteiro. Salto entre os pregos.}
+\item{k}{Inteiro entre 1 e \code{n - 1}. Salto entre os pregos dentro de cada módulo.}
 
-\item{m}{Inteiro. Numero de modulos rotacionados em torno do centro.}
+\item{...}{Argumentos adicionais não utilizados diretamente, mantidos para
+compatibilidade com o contrato padronizado do pacote.}
 
-\item{r}{Numerico. Distancia do centro aos vertices externos do modulo.}
+\item{m}{Inteiro maior ou igual a 1. Número de módulos rotacionados em torno do centro.}
 
-\item{spread}{Numerico. Abertura angular, em radianos, de cada modulo.}
+\item{r}{Número positivo. Distância do centro aos vértices externos do módulo.}
 
-\item{col}{Vetor de cores dos modulos.}
+\item{spread}{Número positivo em radianos. Abertura angular de cada módulo.}
 
-\item{lwd}{Numerico. Espessura das linhas do barbante.}
+\item{col}{Vetor de cores dos módulos. Deve ter comprimento 1 ou \code{m}.}
 
-\item{border_col}{Cor do contorno dos modulos.}
+\item{lwd}{Número positivo. Espessura das linhas do barbante.}
 
-\item{border_lwd}{Numerico. Espessura do contorno dos modulos.}
+\item{plot}{Lógico. Se \code{TRUE}, desenha a figura.}
 
-\item{show_points}{Logico. Se \code{TRUE}, desenha os pregos.}
+\item{show_points}{Lógico. Se \code{TRUE}, desenha os pregos.}
 
-\item{point_col}{Cor da borda dos pregos.}
+\item{cex_pregos}{Número positivo. Tamanho dos pregos.}
+
+\item{col_pregos}{Cor da borda dos pregos.}
+
+\item{show_labels}{Lógico. Se \code{TRUE}, escreve o índice local de cada prego.}
+
+\item{cex_labels}{Número positivo. Tamanho dos rótulos.}
+
+\item{label_col}{Cor dos rótulos.}
+
+\item{verbose}{Lógico. Se \code{TRUE}, imprime informações da construção.}
+
+\item{border_col}{Cor do contorno dos módulos.}
+
+\item{border_lwd}{Número positivo. Espessura do contorno dos módulos.}
 
 \item{point_bg}{Cor de preenchimento dos pregos.}
 
-\item{cex_points}{Numerico. Tamanho dos pregos.}
+\item{pch_points}{Símbolo gráfico dos pregos.}
 
-\item{pch_points}{Simbolo dos pregos.}
-
-\item{show_labels}{Logico. Se \code{TRUE}, escreve o indice de cada prego.}
-
-\item{cex_labels}{Numerico. Tamanho dos rotulos.}
-
-\item{label_col}{Cor dos rotulos.}
-
-\item{verbose}{Logico. Se \code{TRUE}, imprime as conexoes no console.}
-
-\item{show_center}{Logico. Se \code{TRUE}, destaca o centro.}
+\item{show_center}{Lógico. Se \code{TRUE}, destaca o centro.}
 
 \item{center_col}{Cor do ponto central.}
 
-\item{cex_center}{Numerico. Tamanho do ponto central.}
-
-\item{plot}{Logico. Se \code{TRUE}, desenha a figura.}
+\item{cex_center}{Número positivo. Tamanho do ponto central.}
 }
 \value{
-Invisivelmente, uma lista contendo:
+Invisivelmente, uma lista com:
 \describe{
-\item{pregos}{Data frame com as coordenadas dos pregos.}
-\item{conexoes}{Data frame com as conexoes e seus comprimentos.}
+\item{pregos}{\code{data.frame} com colunas \code{indice}, \code{x}, \code{y}, \code{grupo}
+e \code{indice_local}.}
+\item{conexoes}{\code{data.frame} com colunas canônicas
+\code{indice_conexao}, \code{prego_inicial}, \code{prego_final}, \code{x_inicial},
+\code{y_inicial}, \code{x_final}, \code{y_final}, \code{comprimento}, além dos aliases
+\code{i}, \code{j}, \code{x1}, \code{y1}, \code{x2}, \code{y2}, e das colunas extras
+\code{grupo}, \code{indice_local_inicial}, \code{indice_local_final} e \code{cor}.}
 \item{comprimento_total}{Comprimento total do barbante.}
+\item{meta}{Metadados da construção.}
 }
 }
 \description{
-A funcao \code{stradial()} cria uma figura do tipo \emph{String Art} composta por
-modulos triangulares rotacionados em torno de um ponto central. Em cada
-modulo, \code{n} pregos sao distribuidos uniformemente ao longo do contorno
-triangular, e cada prego e ligado ao prego \code{k} posicoes a frente, formando
-padroes geometricos caracteristicos.
+A função \code{stradial()} constrói uma figura de \emph{String Art} composta por
+módulos triangulares rotacionados em torno de um ponto central. Em cada
+módulo, \code{n} pregos são distribuídos uniformemente ao longo do contorno
+triangular, e cada prego é ligado ao prego \code{k} posições à frente,
+formando padrões geométricos característicos.
+}
+\details{
+Cada módulo é tratado de forma auditável, com índices locais e globais
+dos pregos, permitindo compatibilidade com o contrato padronizado do
+pacote \code{stringArt}.
+
+Cada módulo triangular é formado por três vértices:
+
+\enumerate{
+\item o centro \verb{(0, 0)};
+\item um vértice externo à esquerda;
+\item um vértice externo à direita.
+}
+
+O módulo base é rotacionado de forma uniforme em torno da origem para gerar
+os \code{m} módulos. Em cada módulo, os pregos são distribuídos ao longo do
+contorno triangular, de forma geométrica, coerente, auditável e reproduzível.
+
+A regra local de ligação é:
+\code{j <- (i + k - 1) \%\% n + 1},
+em que \code{i} e \code{j} pertencem a \verb{1, ..., n} dentro de cada módulo.
+
+Os índices globais dos pregos são sequenciais ao longo dos módulos:
+
+\enumerate{
+\item módulo 1: \verb{1, ..., n};
+\item módulo 2: \verb{n + 1, ..., 2n};
+\item ...;
+\item módulo \code{m}: \verb{((m - 1)n + 1), ..., mn}.
+}
+}
+\examples{
+# Exemplo básico
+res <- stradial(n = 20, k = 4, m = 6)
+
+# Exemplo com pregos e rótulos
+res <- stradial(
+  n = 18, k = 5, m = 5,
+  show_points = TRUE,
+  show_labels = TRUE
+)
+
+# Exemplo sem gráfico
+res <- stradial(
+  n = 16, k = 3, m = 4,
+  plot = FALSE, verbose = FALSE
+)
+res$comprimento_total
+
 }

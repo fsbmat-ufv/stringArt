@@ -1,193 +1,332 @@
 #' Gera uma figura de String Art circular com efeito de cardioide
 #'
-#' A funcao `stcardioid()` cria uma figura do tipo *String Art* baseada em uma
-#' circunferencia. Os pregos sao igualmente espacados ao longo da borda do
-#' circulo, e cada prego e conectado a outro conforme uma regra multiplicativa
-#' controlada pelo parametro `mult`. Esse tipo de construcao gera padroes
-#' geometricos classicos de *String Art*, incluindo figuras semelhantes a
-#' cardioides e outras curvas envolventes.
+#' A função `stcardioid()` constrói uma figura de *String Art* sobre uma
+#' circunferência, posicionando `n` pregos igualmente espaçados e conectando
+#' cada prego ao prego determinado por uma regra multiplicativa modular baseada
+#' em `k`.
 #'
-#' @param n Inteiro. Numero de pregos distribuidos ao longo da circunferencia.
-#' Deve ser pelo menos 3.
-#' @param mult Numerico. Fator multiplicativo usado para definir as conexoes.
-#' Por exemplo, se `mult = 2`, o prego de indice `i` e conectado ao prego
-#' de indice `2*i` (modulo `n`, com indexacao iniciando em 1).
-#' @param r Numerico. Raio da circunferencia.
-#' @param col Cor das linhas do barbante. Pode ser nome de cor
-#' (ex: `"wheat"`) ou codigo hexadecimal.
-#' @param lwd Numerico. Espessura das linhas do barbante.
-#' @param col_pregos Cor dos pregos.
-#' @param cex_pregos Numerico. Tamanho dos pregos no grafico.
-#' @param pch_pregos Simbolo grafico dos pregos.
-#' @param bg_pregos Cor de preenchimento dos pregos quando aplicavel.
-#' @param border_col Cor da circunferencia externa.
-#' @param border_lwd Numerico. Espessura da borda externa.
-#' @param bg Cor de fundo do grafico.
-#' @param rotate Numerico. Angulo de rotacao, em radianos, aplicado a toda a figura.
-#' Permite mudar a orientacao visual do padrao.
-#' @param show_labels Logico. Se `TRUE`, escreve o indice de cada prego.
-#' @param cex_labels Numerico. Tamanho dos rotulos dos pregos.
-#' @param label_col Cor dos rotulos dos pregos.
-#' @param verbose Logico. Se `TRUE`, imprime no console as conexoes no formato
-#' `Prego i -> Prego j`.
-#' @param plot Logico. Se `TRUE` (padrao), o grafico e desenhado.
+#' A circunferência é centrada na origem, com raio `r`, e os pregos são
+#' numerados de `1` a `n` no sentido anti-horário, a partir do ponto
+#' `(r, 0)`, podendo ser rotacionados por `rotate`.
+#'
+#' @param n Inteiro maior ou igual a 3. Número de pregos.
+#' @param k Inteiro entre 1 e `n - 1`. Fator multiplicativo modular da conexão.
+#' @param r Número positivo. Raio da circunferência.
+#' @param ... Argumentos adicionais não utilizados diretamente, mantidos para
+#'   compatibilidade com o contrato padronizado do pacote.
+#' @param col Cor das conexões.
+#' @param lwd Número positivo. Espessura das conexões.
+#' @param plot Lógico. Se `TRUE`, desenha a figura.
+#' @param show_points Lógico. Se `TRUE`, mostra os pregos.
+#' @param cex_pregos Número positivo. Tamanho dos pregos.
+#' @param col_pregos Cor da borda dos pregos.
+#' @param show_labels Lógico. Se `TRUE`, mostra os rótulos dos pregos.
+#' @param cex_labels Número positivo. Tamanho dos rótulos.
+#' @param label_col Cor dos rótulos.
+#' @param verbose Lógico. Se `TRUE`, exibe mensagens informativas.
+#' @param pch_pregos Símbolo gráfico dos pregos.
+#' @param bg_pregos Cor de preenchimento dos pregos, quando aplicável.
+#' @param border_col Cor da circunferência externa.
+#' @param border_lwd Número positivo. Espessura da borda externa.
+#' @param bg Cor de fundo do gráfico.
+#' @param rotate Número real. Ângulo de rotação, em radianos.
 #'
 #' @details
-#' A funcao distribui `n` pregos igualmente sobre uma circunferencia de raio `r`.
-#' Em seguida, para cada prego `i`, desenha-se um segmento ligando esse ponto ao
-#' prego de indice
+#' Os pregos são distribuídos uniformemente sobre uma circunferência de raio `r`.
+#' A ordem dos pregos é explícita, geométrica, auditável e reproduzível.
 #'
-#' \deqn{j = ((\mathrm{round}(mult * (i - 1))) \bmod n) + 1}
+#' A regra de ligação utilizada é:
+#' `j <- ((k * (i - 1)) %% n) + 1`.
 #'
-#' Essa regra produz padroes visuais ricos e bastante conhecidos em *String Art*.
-#' Quando `mult = 2`, por exemplo, surge uma figura classica semelhante a uma
-#' cardioide. Outros valores podem gerar variacoes igualmente interessantes.
+#' Essa regra gera padrões clássicos de *String Art* baseados em tabelas
+#' multiplicativas modulares. Quando `k = 2`, obtém-se a figura clássica
+#' associada ao efeito de cardioide.
 #'
-#' Os pregos podem ser desenhados com destaque e numerados para facilitar a
-#' verificacao da regra de conexao.
-#'
-#' @return Invisivelmente, uma lista contendo:
+#' @return Invisivelmente, uma lista com:
 #' \describe{
-#'   \item{pregos}{Data frame com coordenadas `(x, y)` e indice dos pregos.}
-#'   \item{conexoes}{Data frame com indices inicial e final, coordenadas e comprimento de cada segmento.}
-#'   \item{comprimento_total}{Valor numerico com o comprimento total do barbante.}
+#'   \item{pregos}{`data.frame` com colunas `indice`, `x` e `y`.}
+#'   \item{conexoes}{`data.frame` com colunas canônicas
+#'   `indice_conexao`, `prego_inicial`, `prego_final`, `x_inicial`,
+#'   `y_inicial`, `x_final`, `y_final`, `comprimento`, além dos aliases
+#'   `i`, `j`, `x1`, `y1`, `x2`, `y2`.}
+#'   \item{comprimento_total}{Comprimento total do barbante.}
+#'   \item{meta}{Metadados da construção.}
 #' }
 #'
 #' @examples
-#' # Exemplo basico
-#' stcardioid(n = 120, mult = 2, r = 1,
-#'            col = "wheat", lwd = 0.8)
+#' # Exemplo básico
+#' stcardioid(n = 120, k = 2, r = 1, col = "wheat", lwd = 0.8)
 #'
 #' # Exemplo com auditoria visual
-#' stcardioid(n = 12, mult = 2, r = 1,
-#'            col = "steelblue", lwd = 1,
-#'            show_labels = TRUE, verbose = TRUE)
+#' stcardioid(
+#'   n = 12, k = 2, r = 1,
+#'   col = "steelblue", lwd = 1,
+#'   show_points = TRUE,
+#'   show_labels = TRUE,
+#'   verbose = TRUE
+#' )
 #'
-#' # Exemplo sem exibir o grafico
-#' res <- stcardioid(n = 80, mult = 2, r = 1, plot = FALSE)
+#' # Exemplo sem gráfico
+#' res <- stcardioid(
+#'   n = 80, k = 2, r = 1,
+#'   plot = FALSE, verbose = FALSE
+#' )
 #' res$comprimento_total
-#'
-#' @seealso
-#' Outras funcoes da serie StringArt, como `stcircle()`, `stellipse()` e `sttriangle()`.
+#' head(res$pregos)
+#' head(res$conexoes)
 #'
 #' @importFrom graphics plot points segments symbols par text
 #' @export
-stcardioid <- function(n,
-                       mult = 2,
-                       r = 1,
-                       col = "antiquewhite",
-                       lwd = 0.8,
-                       col_pregos = "darkorange2",
-                       cex_pregos = 0.8,
-                       pch_pregos = 21,
-                       bg_pregos = "white",
-                       border_col = "goldenrod3",
-                       border_lwd = 1.2,
-                       bg = "white",
-                       rotate = 0,
-                       show_labels = FALSE,
-                       cex_labels = 0.7,
-                       label_col = "black",
-                       verbose = FALSE,
-                       plot = TRUE) {
+stcardioid <- function(
+    n,
+    k,
+    r = 1,
+    ...,
+    col = "antiquewhite",
+    lwd = 0.8,
+    plot = TRUE,
+    show_points = FALSE,
+    cex_pregos = 0.8,
+    col_pregos = "darkorange2",
+    show_labels = FALSE,
+    cex_labels = 0.7,
+    label_col = "black",
+    verbose = TRUE,
+    pch_pregos = 21,
+    bg_pregos = "white",
+    border_col = "goldenrod3",
+    border_lwd = 1.2,
+    bg = "white",
+    rotate = 0
+) {
 
-  if (n < 3) stop("E necessario pelo menos 3 pregos.")
-  if (r <= 0) stop("O raio 'r' deve ser positivo.")
+  # ---------------------------------------------------------------------------
+  # Validações
+  # ---------------------------------------------------------------------------
+  if (!is.numeric(n) || length(n) != 1L || is.na(n) ||
+      n != as.integer(n) || n < 3L) {
+    stop("`n` must be a single integer greater than or equal to 3.")
+  }
 
-  # Angulos dos pregos
-  theta <- seq(0, 2 * pi, length.out = n + 1)[-(n + 1)] + rotate
+  if (!is.numeric(k) || length(k) != 1L || is.na(k) ||
+      k != as.integer(k) || k < 1L) {
+    stop("`k` must be a single positive integer.")
+  }
 
-  # Coordenadas dos pregos
-  x <- r * cos(theta)
-  y <- r * sin(theta)
+  if (!is.numeric(r) || length(r) != 1L || is.na(r) || r <= 0) {
+    stop("`r` must be a single positive number.")
+  }
+
+  if (!is.numeric(lwd) || length(lwd) != 1L || is.na(lwd) || lwd <= 0) {
+    stop("`lwd` must be a single positive number.")
+  }
+
+  if (!is.numeric(border_lwd) || length(border_lwd) != 1L ||
+      is.na(border_lwd) || border_lwd <= 0) {
+    stop("`border_lwd` must be a single positive number.")
+  }
+
+  if (!is.numeric(rotate) || length(rotate) != 1L || is.na(rotate)) {
+    stop("`rotate` must be a single numeric value.")
+  }
+
+  if (!is.logical(plot) || length(plot) != 1L || is.na(plot)) {
+    stop("`plot` must be TRUE or FALSE.")
+  }
+
+  if (!is.logical(show_points) || length(show_points) != 1L || is.na(show_points)) {
+    stop("`show_points` must be TRUE or FALSE.")
+  }
+
+  if (!is.logical(show_labels) || length(show_labels) != 1L || is.na(show_labels)) {
+    stop("`show_labels` must be TRUE or FALSE.")
+  }
+
+  if (!is.logical(verbose) || length(verbose) != 1L || is.na(verbose)) {
+    stop("`verbose` must be TRUE or FALSE.")
+  }
+
+  if (!is.numeric(cex_pregos) || length(cex_pregos) != 1L ||
+      is.na(cex_pregos) || cex_pregos <= 0) {
+    stop("`cex_pregos` must be a single positive number.")
+  }
+
+  if (!is.numeric(cex_labels) || length(cex_labels) != 1L ||
+      is.na(cex_labels) || cex_labels <= 0) {
+    stop("`cex_labels` must be a single positive number.")
+  }
+
+  n <- as.integer(n)
+  k <- as.integer(k)
+
+  if (k >= n) {
+    stop("`k` must satisfy 1 <= k <= n - 1.")
+  }
+
+  # ---------------------------------------------------------------------------
+  # Função auxiliar
+  # ---------------------------------------------------------------------------
+  gcd_int <- function(x, y) {
+    x <- abs(as.integer(x))
+    y <- abs(as.integer(y))
+    while (y != 0L) {
+      tmp <- y
+      y <- x %% y
+      x <- tmp
+    }
+    x
+  }
+
+  # ---------------------------------------------------------------------------
+  # Pregos: circunferência
+  # ---------------------------------------------------------------------------
+  theta <- seq(0, 2 * pi, length.out = n + 1L)[-(n + 1L)] + rotate
 
   pregos <- data.frame(
-    indice = 1:n,
-    x = x,
-    y = y
+    indice = seq_len(n),
+    x = r * cos(theta),
+    y = r * sin(theta)
   )
 
-  # Estrutura para armazenar as conexoes
-  total_length <- 0
+  # ---------------------------------------------------------------------------
+  # Conexões: regra multiplicativa modular
+  # ---------------------------------------------------------------------------
+  indice_conexao <- seq_len(n)
+  prego_inicial <- seq_len(n)
+  prego_final <- ((k * (prego_inicial - 1L)) %% n) + 1L
+
+  x_inicial <- pregos$x[prego_inicial]
+  y_inicial <- pregos$y[prego_inicial]
+  x_final   <- pregos$x[prego_final]
+  y_final   <- pregos$y[prego_final]
+
+  comprimento <- sqrt((x_final - x_inicial)^2 + (y_final - y_inicial)^2)
+
   conexoes <- data.frame(
-    i = integer(n),
-    j = integer(n),
-    x1 = numeric(n),
-    y1 = numeric(n),
-    x2 = numeric(n),
-    y2 = numeric(n),
-    comprimento = numeric(n)
+    indice_conexao = indice_conexao,
+    prego_inicial = prego_inicial,
+    prego_final = prego_final,
+    x_inicial = x_inicial,
+    y_inicial = y_inicial,
+    x_final = x_final,
+    y_final = y_final,
+    comprimento = comprimento,
+    i = prego_inicial,
+    j = prego_final,
+    x1 = x_inicial,
+    y1 = y_inicial,
+    x2 = x_final,
+    y2 = y_final
   )
 
-  # Plotagem
+  comprimento_total <- sum(conexoes$comprimento)
+
+  # ---------------------------------------------------------------------------
+  # Gráfico
+  # ---------------------------------------------------------------------------
   if (plot) {
-    old_par <- par(no.readonly = TRUE)
-    on.exit(par(old_par))
+    old_par <- graphics::par(no.readonly = TRUE)
+    on.exit(graphics::par(old_par), add = TRUE)
 
-    par(bg = bg)
+    graphics::par(bg = bg)
 
-    plot(x, y,
-         type = "n",
-         asp = 1,
-         axes = FALSE,
-         xlab = "",
-         ylab = "",
-         main = sprintf("String Art circular com %d pregos", n))
+    margem <- 0.12 * r
+    lims <- c(-r - margem, r + margem)
 
-    # Borda externa do circulo
-    symbols(0, 0, circles = r, inches = FALSE, add = TRUE,
-            fg = border_col, bg = NA, lwd = border_lwd)
-  }
+    graphics::plot(
+      NA, NA,
+      xlim = lims,
+      ylim = lims,
+      asp = 1,
+      axes = FALSE,
+      xlab = "",
+      ylab = ""
+    )
 
-  # Conexoes usando regra multiplicativa
-  for (i in 1:n) {
-    j <- (round(mult * (i - 1)) %% n) + 1
+    graphics::symbols(
+      0, 0,
+      circles = r,
+      inches = FALSE,
+      add = TRUE,
+      fg = border_col,
+      bg = NA,
+      lwd = border_lwd
+    )
 
-    if (plot) {
-      segments(x[i], y[i], x[j], y[j], col = col, lwd = lwd)
+    graphics::segments(
+      x0 = conexoes$x_inicial,
+      y0 = conexoes$y_inicial,
+      x1 = conexoes$x_final,
+      y1 = conexoes$y_final,
+      col = col,
+      lwd = lwd
+    )
+
+    if (show_points) {
+      graphics::points(
+        pregos$x, pregos$y,
+        pch = pch_pregos,
+        col = col_pregos,
+        bg = bg_pregos,
+        cex = cex_pregos
+      )
     }
 
-    len <- sqrt((x[j] - x[i])^2 + (y[j] - y[i])^2)
-    total_length <- total_length + len
-
-    conexoes[i, ] <- c(i, j, x[i], y[i], x[j], y[j], len)
+    if (show_labels) {
+      graphics::text(
+        pregos$x,
+        pregos$y,
+        labels = pregos$indice,
+        pos = 3,
+        cex = cex_labels,
+        col = label_col
+      )
+    }
   }
 
-  # Desenhar os pregos por cima para maior destaque
-  if (plot) {
-    points(x, y,
-           pch = pch_pregos,
-           col = col_pregos,
-           bg = bg_pregos,
-           cex = cex_pregos)
-  }
-
-  # Rotulos dos pregos
-  if (plot && show_labels) {
-    text(x, y,
-         labels = 1:n,
-         pos = 3,
-         cex = cex_labels,
-         col = label_col)
-  }
-
-  # Mensagem com comprimento total
-  message(sprintf("Comprimento total de barbante: %.2f unidades", total_length))
-
-  # Impressao textual das conexoes
+  # ---------------------------------------------------------------------------
+  # Mensagens
+  # ---------------------------------------------------------------------------
   if (verbose) {
-    conexoes_texto <- paste0(
-      "Prego ", 1:n,
-      " -> Prego ",
-      (round(mult * (0:(n - 1))) %% n) + 1
-    )
-    cat(paste(conexoes_texto, collapse = "\n"), "\n")
+    message(sprintf(
+      "Comprimento total do barbante: %.4f unidades.",
+      comprimento_total
+    ))
+
+    d <- gcd_int(n, k)
+    if (d == 1L) {
+      message("A regra multiplicativa modular gera um único ciclo.")
+    } else {
+      message(sprintf(
+        "A regra multiplicativa modular gera %d ciclos independentes (gcd(n, k) = %d).",
+        d, d
+      ))
+    }
   }
 
-  # Retorno
-  invisible(list(
+  # ---------------------------------------------------------------------------
+  # Retorno padronizado
+  # ---------------------------------------------------------------------------
+  res <- list(
     pregos = pregos,
     conexoes = conexoes,
-    comprimento_total = total_length
-  ))
+    comprimento_total = comprimento_total,
+    meta = list(
+      figura = "cardioide",
+      regra = "j = ((k * (i - 1)) %% n) + 1",
+      parametros = list(
+        n = n,
+        k = k,
+        r = r,
+        col = col,
+        lwd = lwd,
+        rotate = rotate
+      ),
+      pacote = "stringArt"
+    )
+  )
+
+  class(res) <- c("stringart_result", class(res))
+
+  invisible(res)
 }

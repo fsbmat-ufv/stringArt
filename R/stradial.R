@@ -1,72 +1,224 @@
-#' Gera uma figura radial de String Art com modulos triangulares
+#' Gera uma figura radial de String Art com módulos triangulares
 #'
-#' A funcao `stradial()` cria uma figura do tipo *String Art* composta por
-#' modulos triangulares rotacionados em torno de um ponto central. Em cada
-#' modulo, `n` pregos sao distribuidos uniformemente ao longo do contorno
-#' triangular, e cada prego e ligado ao prego `k` posicoes a frente, formando
-#' padroes geometricos caracteristicos.
+#' A função `stradial()` constrói uma figura de *String Art* composta por
+#' módulos triangulares rotacionados em torno de um ponto central. Em cada
+#' módulo, `n` pregos são distribuídos uniformemente ao longo do contorno
+#' triangular, e cada prego é ligado ao prego `k` posições à frente,
+#' formando padrões geométricos característicos.
 #'
-#' @param n Inteiro. Numero de pregos em cada modulo triangular.
-#' @param k Inteiro. Salto entre os pregos.
-#' @param m Inteiro. Numero de modulos rotacionados em torno do centro.
-#' @param r Numerico. Distancia do centro aos vertices externos do modulo.
-#' @param spread Numerico. Abertura angular, em radianos, de cada modulo.
-#' @param col Vetor de cores dos modulos.
-#' @param lwd Numerico. Espessura das linhas do barbante.
-#' @param border_col Cor do contorno dos modulos.
-#' @param border_lwd Numerico. Espessura do contorno dos modulos.
-#' @param show_points Logico. Se `TRUE`, desenha os pregos.
-#' @param point_col Cor da borda dos pregos.
+#' Cada módulo é tratado de forma auditável, com índices locais e globais
+#' dos pregos, permitindo compatibilidade com o contrato padronizado do
+#' pacote `stringArt`.
+#'
+#' @param n Inteiro maior ou igual a 3. Número de pregos em cada módulo triangular.
+#' @param k Inteiro entre 1 e `n - 1`. Salto entre os pregos dentro de cada módulo.
+#' @param ... Argumentos adicionais não utilizados diretamente, mantidos para
+#'   compatibilidade com o contrato padronizado do pacote.
+#' @param m Inteiro maior ou igual a 1. Número de módulos rotacionados em torno do centro.
+#' @param r Número positivo. Distância do centro aos vértices externos do módulo.
+#' @param spread Número positivo em radianos. Abertura angular de cada módulo.
+#' @param col Vetor de cores dos módulos. Deve ter comprimento 1 ou `m`.
+#' @param lwd Número positivo. Espessura das linhas do barbante.
+#' @param plot Lógico. Se `TRUE`, desenha a figura.
+#' @param show_points Lógico. Se `TRUE`, desenha os pregos.
+#' @param cex_pregos Número positivo. Tamanho dos pregos.
+#' @param col_pregos Cor da borda dos pregos.
+#' @param show_labels Lógico. Se `TRUE`, escreve o índice local de cada prego.
+#' @param cex_labels Número positivo. Tamanho dos rótulos.
+#' @param label_col Cor dos rótulos.
+#' @param verbose Lógico. Se `TRUE`, imprime informações da construção.
+#' @param border_col Cor do contorno dos módulos.
+#' @param border_lwd Número positivo. Espessura do contorno dos módulos.
 #' @param point_bg Cor de preenchimento dos pregos.
-#' @param cex_points Numerico. Tamanho dos pregos.
-#' @param pch_points Simbolo dos pregos.
-#' @param show_labels Logico. Se `TRUE`, escreve o indice de cada prego.
-#' @param cex_labels Numerico. Tamanho dos rotulos.
-#' @param label_col Cor dos rotulos.
-#' @param verbose Logico. Se `TRUE`, imprime as conexoes no console.
-#' @param show_center Logico. Se `TRUE`, destaca o centro.
+#' @param pch_points Símbolo gráfico dos pregos.
+#' @param show_center Lógico. Se `TRUE`, destaca o centro.
 #' @param center_col Cor do ponto central.
-#' @param cex_center Numerico. Tamanho do ponto central.
-#' @param plot Logico. Se `TRUE`, desenha a figura.
+#' @param cex_center Número positivo. Tamanho do ponto central.
 #'
-#' @return Invisivelmente, uma lista contendo:
-#' \describe{
-#'   \item{pregos}{Data frame com as coordenadas dos pregos.}
-#'   \item{conexoes}{Data frame com as conexoes e seus comprimentos.}
-#'   \item{comprimento_total}{Comprimento total do barbante.}
+#' @details
+#' Cada módulo triangular é formado por três vértices:
+#'
+#' \enumerate{
+#'   \item o centro `(0, 0)`;
+#'   \item um vértice externo à esquerda;
+#'   \item um vértice externo à direita.
 #' }
+#'
+#' O módulo base é rotacionado de forma uniforme em torno da origem para gerar
+#' os `m` módulos. Em cada módulo, os pregos são distribuídos ao longo do
+#' contorno triangular, de forma geométrica, coerente, auditável e reproduzível.
+#'
+#' A regra local de ligação é:
+#' `j <- (i + k - 1) %% n + 1`,
+#' em que `i` e `j` pertencem a `1, ..., n` dentro de cada módulo.
+#'
+#' Os índices globais dos pregos são sequenciais ao longo dos módulos:
+#'
+#' \enumerate{
+#'   \item módulo 1: `1, ..., n`;
+#'   \item módulo 2: `n + 1, ..., 2n`;
+#'   \item ...;
+#'   \item módulo `m`: `((m - 1)n + 1), ..., mn`.
+#' }
+#'
+#' @return Invisivelmente, uma lista com:
+#' \describe{
+#'   \item{pregos}{`data.frame` com colunas `indice`, `x`, `y`, `grupo`
+#'   e `indice_local`.}
+#'   \item{conexoes}{`data.frame` com colunas canônicas
+#'   `indice_conexao`, `prego_inicial`, `prego_final`, `x_inicial`,
+#'   `y_inicial`, `x_final`, `y_final`, `comprimento`, além dos aliases
+#'   `i`, `j`, `x1`, `y1`, `x2`, `y2`, e das colunas extras
+#'   `grupo`, `indice_local_inicial`, `indice_local_final` e `cor`.}
+#'   \item{comprimento_total}{Comprimento total do barbante.}
+#'   \item{meta}{Metadados da construção.}
+#' }
+#'
+#' @examples
+#' # Exemplo básico
+#' res <- stradial(n = 20, k = 4, m = 6)
+#'
+#' # Exemplo com pregos e rótulos
+#' res <- stradial(
+#'   n = 18, k = 5, m = 5,
+#'   show_points = TRUE,
+#'   show_labels = TRUE
+#' )
+#'
+#' # Exemplo sem gráfico
+#' res <- stradial(
+#'   n = 16, k = 3, m = 4,
+#'   plot = FALSE, verbose = FALSE
+#' )
+#' res$comprimento_total
 #'
 #' @importFrom graphics plot points segments text
 #' @export
-stradial <- function(n,
-                     k,
-                     m = 1,
-                     r = 1.2,
-                     spread = pi / 5,
-                     col = rainbow(m),
-                     lwd = 1,
-                     border_col = "black",
-                     border_lwd = 1.1,
-                     show_points = TRUE,
-                     point_col = "black",
-                     point_bg = "white",
-                     cex_points = 0.8,
-                     pch_points = 21,
-                     show_labels = FALSE,
-                     cex_labels = 0.7,
-                     label_col = "black",
-                     verbose = FALSE,
-                     show_center = TRUE,
-                     center_col = "black",
-                     cex_center = 0.9,
-                     plot = TRUE) {
+stradial <- function(
+    n,
+    k,
+    ...,
+    m = 1,
+    r = 1.2,
+    spread = pi / 5,
+    col = rainbow(m),
+    lwd = 1,
+    plot = TRUE,
+    show_points = FALSE,
+    cex_pregos = 0.8,
+    col_pregos = "black",
+    show_labels = FALSE,
+    cex_labels = 0.7,
+    label_col = "black",
+    verbose = TRUE,
+    border_col = "black",
+    border_lwd = 1.1,
+    point_bg = "white",
+    pch_points = 21,
+    show_center = TRUE,
+    center_col = "black",
+    cex_center = 0.9
+) {
 
-  if (n < 3) stop("E necessario pelo menos 3 pregos por modulo.")
-  if (k < 1) stop("O salto 'k' deve ser pelo menos 1.")
-  if (k >= n) stop("O salto 'k' deve ser menor que 'n'.")
-  if (m < 1) stop("E necessario pelo menos 1 modulo.")
-  if (length(col) == 1) col <- rep(col, m)
-  if (length(col) != m) stop("O argumento 'col' deve ter comprimento 1 ou m.")
+  # ---------------------------------------------------------------------------
+  # Validações
+  # ---------------------------------------------------------------------------
+  if (!is.numeric(n) || length(n) != 1L || is.na(n) ||
+      n != as.integer(n) || n < 3L) {
+    stop("`n` must be a single integer greater than or equal to 3.")
+  }
+
+  if (!is.numeric(k) || length(k) != 1L || is.na(k) ||
+      k != as.integer(k) || k < 1L) {
+    stop("`k` must be a single positive integer.")
+  }
+
+  if (!is.numeric(m) || length(m) != 1L || is.na(m) ||
+      m != as.integer(m) || m < 1L) {
+    stop("`m` must be a single integer greater than or equal to 1.")
+  }
+
+  if (!is.numeric(r) || length(r) != 1L || is.na(r) || r <= 0) {
+    stop("`r` must be a single positive number.")
+  }
+
+  if (!is.numeric(spread) || length(spread) != 1L || is.na(spread) || spread <= 0) {
+    stop("`spread` must be a single positive number.")
+  }
+
+  if (!is.numeric(lwd) || length(lwd) != 1L || is.na(lwd) || lwd <= 0) {
+    stop("`lwd` must be a single positive number.")
+  }
+
+  if (!is.numeric(border_lwd) || length(border_lwd) != 1L ||
+      is.na(border_lwd) || border_lwd <= 0) {
+    stop("`border_lwd` must be a single positive number.")
+  }
+
+  if (!is.numeric(cex_pregos) || length(cex_pregos) != 1L ||
+      is.na(cex_pregos) || cex_pregos <= 0) {
+    stop("`cex_pregos` must be a single positive number.")
+  }
+
+  if (!is.numeric(cex_labels) || length(cex_labels) != 1L ||
+      is.na(cex_labels) || cex_labels <= 0) {
+    stop("`cex_labels` must be a single positive number.")
+  }
+
+  if (!is.numeric(cex_center) || length(cex_center) != 1L ||
+      is.na(cex_center) || cex_center <= 0) {
+    stop("`cex_center` must be a single positive number.")
+  }
+
+  if (!is.logical(plot) || length(plot) != 1L || is.na(plot)) {
+    stop("`plot` must be TRUE or FALSE.")
+  }
+
+  if (!is.logical(show_points) || length(show_points) != 1L || is.na(show_points)) {
+    stop("`show_points` must be TRUE or FALSE.")
+  }
+
+  if (!is.logical(show_labels) || length(show_labels) != 1L || is.na(show_labels)) {
+    stop("`show_labels` must be TRUE or FALSE.")
+  }
+
+  if (!is.logical(verbose) || length(verbose) != 1L || is.na(verbose)) {
+    stop("`verbose` must be TRUE or FALSE.")
+  }
+
+  if (!is.logical(show_center) || length(show_center) != 1L || is.na(show_center)) {
+    stop("`show_center` must be TRUE or FALSE.")
+  }
+
+  n <- as.integer(n)
+  k <- as.integer(k)
+  m <- as.integer(m)
+
+  if (k >= n) {
+    stop("`k` must satisfy 1 <= k <= n - 1.")
+  }
+
+  if (length(col) == 1L) {
+    col <- rep(col, m)
+  }
+
+  if (length(col) != m) {
+    stop("`col` must have length 1 or `m`.")
+  }
+
+  # ---------------------------------------------------------------------------
+  # Funções auxiliares
+  # ---------------------------------------------------------------------------
+  gcd_int <- function(x, y) {
+    x <- abs(as.integer(x))
+    y <- abs(as.integer(y))
+    while (y != 0L) {
+      tmp <- y
+      y <- x %% y
+      x <- tmp
+    }
+    x
+  }
 
   rotaciona <- function(x, y, ang) {
     xr <- x * cos(ang) - y * sin(ang)
@@ -75,31 +227,33 @@ stradial <- function(n,
   }
 
   interp_segmento <- function(P, Q, t) {
-    c((1 - t) * P[1] + t * Q[1],
-      (1 - t) * P[2] + t * Q[2])
+    c(
+      (1 - t) * P[1] + t * Q[1],
+      (1 - t) * P[2] + t * Q[2]
+    )
   }
 
-  pregos_no_triangulo <- function(A, B, C, n) {
+  pregos_no_triangulo <- function(A, B, C, n_local) {
     L1 <- sqrt(sum((B - A)^2))
     L2 <- sqrt(sum((C - B)^2))
     L3 <- sqrt(sum((A - C)^2))
     per <- L1 + L2 + L3
 
-    s <- seq(0, per, length.out = n + 1)[-(n + 1)]
-    pts <- matrix(0, nrow = n, ncol = 2)
+    s <- seq(0, per, length.out = n_local + 1L)[-(n_local + 1L)]
+    pts <- matrix(0, nrow = n_local, ncol = 2)
 
-    for (i in seq_along(s)) {
-      si <- s[i]
+    for (idx in seq_along(s)) {
+      si <- s[idx]
 
       if (si < L1) {
         t <- si / L1
-        pts[i, ] <- interp_segmento(A, B, t)
+        pts[idx, ] <- interp_segmento(A, B, t)
       } else if (si < L1 + L2) {
         t <- (si - L1) / L2
-        pts[i, ] <- interp_segmento(B, C, t)
+        pts[idx, ] <- interp_segmento(B, C, t)
       } else {
         t <- (si - L1 - L2) / L3
-        pts[i, ] <- interp_segmento(C, A, t)
+        pts[idx, ] <- interp_segmento(C, A, t)
       }
     }
 
@@ -107,127 +261,211 @@ stradial <- function(n,
     as.data.frame(pts)
   }
 
+  # ---------------------------------------------------------------------------
+  # Geometria do módulo base
+  # ---------------------------------------------------------------------------
   O  <- c(0, 0)
   P1 <- c(r * cos(-spread / 2), r * sin(-spread / 2))
   P2 <- c(r * cos( spread / 2), r * sin( spread / 2))
 
-  total_length <- 0
-  conexoes <- data.frame(
-    grupo = integer(),
-    i = integer(),
-    j = integer(),
-    x1 = numeric(),
-    y1 = numeric(),
-    x2 = numeric(),
-    y2 = numeric(),
-    comprimento = numeric(),
-    cor = character(),
-    stringsAsFactors = FALSE
-  )
+  # ---------------------------------------------------------------------------
+  # Construção de pregos e conexões
+  # ---------------------------------------------------------------------------
+  pregos_list <- list()
+  conexoes_list <- list()
 
-  pregos_all <- data.frame(
-    grupo = integer(),
-    indice = integer(),
-    x = numeric(),
-    y = numeric(),
-    stringsAsFactors = FALSE
-  )
-
-  if (plot) {
-    lim <- 1.20 * r
-    plot(NA, NA,
-         xlim = c(-lim, lim),
-         ylim = c(-lim, lim),
-         asp = 1,
-         axes = FALSE,
-         xlab = "",
-         ylab = "",
-         main = sprintf("String Art radial com %d modulo(s)", m))
-  }
+  global_nail_id <- 0L
+  global_conn_id <- 0L
 
   for (g in 1:m) {
-    ang <- 2 * pi * (g - 1) / m
+    ang <- 2 * pi * (g - 1L) / m
 
     Oi  <- as.numeric(rotaciona(O[1],  O[2],  ang))
     P1i <- as.numeric(rotaciona(P1[1], P1[2], ang))
     P2i <- as.numeric(rotaciona(P2[1], P2[2], ang))
 
-    pregos <- pregos_no_triangulo(Oi, P1i, P2i, n)
-    pregos$grupo <- g
-    pregos$indice <- 1:n
+    pregos_mod <- pregos_no_triangulo(Oi, P1i, P2i, n)
 
-    pregos_all <- rbind(
-      pregos_all,
-      pregos[, c("grupo", "indice", "x", "y")]
-    )
+    ids_mod <- integer(n)
+    for (i_local in 1:n) {
+      global_nail_id <- global_nail_id + 1L
+      ids_mod[i_local] <- global_nail_id
 
-    if (plot) {
-      segments(Oi[1], Oi[2], P1i[1], P1i[2], col = border_col, lwd = border_lwd)
-      segments(P1i[1], P1i[2], P2i[1], P2i[2], col = border_col, lwd = border_lwd)
-      segments(P2i[1], P2i[2], Oi[1], Oi[2], col = border_col, lwd = border_lwd)
+      pregos_list[[global_nail_id]] <- data.frame(
+        indice = global_nail_id,
+        x = pregos_mod$x[i_local],
+        y = pregos_mod$y[i_local],
+        grupo = g,
+        indice_local = i_local,
+        stringsAsFactors = FALSE
+      )
     }
 
-    for (i in 1:n) {
-      j <- (i + k - 1) %% n + 1
+    for (i_local in 1:n) {
+      j_local <- (i_local + k - 1L) %% n + 1L
 
-      if (plot) {
-        segments(pregos$x[i], pregos$y[i], pregos$x[j], pregos$y[j],
-                 col = col[g], lwd = lwd)
-      }
+      i_global <- ids_mod[i_local]
+      j_global <- ids_mod[j_local]
 
-      len <- sqrt((pregos$x[j] - pregos$x[i])^2 + (pregos$y[j] - pregos$y[i])^2)
-      total_length <- total_length + len
+      x1 <- pregos_mod$x[i_local]
+      y1 <- pregos_mod$y[i_local]
+      x2 <- pregos_mod$x[j_local]
+      y2 <- pregos_mod$y[j_local]
 
-      conexoes <- rbind(conexoes, data.frame(
+      comp <- sqrt((x2 - x1)^2 + (y2 - y1)^2)
+
+      global_conn_id <- global_conn_id + 1L
+
+      conexoes_list[[global_conn_id]] <- data.frame(
+        indice_conexao = global_conn_id,
+        prego_inicial = i_global,
+        prego_final = j_global,
+        x_inicial = x1,
+        y_inicial = y1,
+        x_final = x2,
+        y_final = y2,
+        comprimento = comp,
+        i = i_global,
+        j = j_global,
+        x1 = x1,
+        y1 = y1,
+        x2 = x2,
+        y2 = y2,
         grupo = g,
-        i = i,
-        j = j,
-        x1 = pregos$x[i],
-        y1 = pregos$y[i],
-        x2 = pregos$x[j],
-        y2 = pregos$y[j],
-        comprimento = len,
+        indice_local_inicial = i_local,
+        indice_local_final = j_local,
         cor = col[g],
         stringsAsFactors = FALSE
+      )
+    }
+  }
+
+  pregos_all <- do.call(rbind, pregos_list)
+  conexoes <- do.call(rbind, conexoes_list)
+
+  rownames(pregos_all) <- NULL
+  rownames(conexoes) <- NULL
+
+  comprimento_total <- sum(conexoes$comprimento)
+
+  # ---------------------------------------------------------------------------
+  # Gráfico
+  # ---------------------------------------------------------------------------
+  if (plot) {
+    lim <- 1.20 * r
+
+    graphics::plot(
+      NA, NA,
+      xlim = c(-lim, lim),
+      ylim = c(-lim, lim),
+      asp = 1,
+      axes = FALSE,
+      xlab = "",
+      ylab = ""
+    )
+
+    for (g in 1:m) {
+      idx_p <- which(pregos_all$grupo == g)
+      pmod <- pregos_all[idx_p, , drop = FALSE]
+
+      Oi  <- c(0, 0)
+      ang <- 2 * pi * (g - 1L) / m
+      P1i <- as.numeric(rotaciona(P1[1], P1[2], ang))
+      P2i <- as.numeric(rotaciona(P2[1], P2[2], ang))
+
+      graphics::segments(Oi[1], Oi[2], P1i[1], P1i[2], col = border_col, lwd = border_lwd)
+      graphics::segments(P1i[1], P1i[2], P2i[1], P2i[2], col = border_col, lwd = border_lwd)
+      graphics::segments(P2i[1], P2i[2], Oi[1], Oi[2], col = border_col, lwd = border_lwd)
+
+      idx_c <- which(conexoes$grupo == g)
+      if (length(idx_c) > 0L) {
+        graphics::segments(
+          x0 = conexoes$x_inicial[idx_c],
+          y0 = conexoes$y_inicial[idx_c],
+          x1 = conexoes$x_final[idx_c],
+          y1 = conexoes$y_final[idx_c],
+          col = col[g],
+          lwd = lwd
+        )
+      }
+
+      if (show_points) {
+        graphics::points(
+          pmod$x, pmod$y,
+          pch = pch_points,
+          col = col_pregos,
+          bg = point_bg,
+          cex = cex_pregos
+        )
+      }
+
+      if (show_labels) {
+        graphics::text(
+          pmod$x, pmod$y,
+          labels = pmod$indice_local,
+          pos = 3,
+          cex = cex_labels,
+          col = label_col
+        )
+      }
+    }
+
+    if (show_center) {
+      graphics::points(0, 0, pch = 19, col = center_col, cex = cex_center)
+    }
+  }
+
+  # ---------------------------------------------------------------------------
+  # Mensagens
+  # ---------------------------------------------------------------------------
+  if (verbose) {
+    message(sprintf(
+      "Comprimento total do barbante: %.4f unidades.",
+      comprimento_total
+    ))
+
+    d <- gcd_int(n, k)
+    if (d == 1L) {
+      message("Em cada módulo, a regra local gera um único ciclo.")
+    } else {
+      message(sprintf(
+        "Em cada módulo, a regra local gera %d ciclos independentes (gcd(n, k) = %d).",
+        d, d
       ))
     }
 
-    if (plot && show_points) {
-      points(pregos$x, pregos$y,
-             pch = pch_points,
-             col = point_col,
-             bg = point_bg,
-             cex = cex_points)
-    }
-
-    if (plot && show_labels) {
-      text(pregos$x, pregos$y,
-           labels = pregos$indice,
-           pos = 3,
-           cex = cex_labels,
-           col = label_col)
-    }
-
-    if (verbose) {
-      conexoes_texto <- paste0(
-        "Modulo ", g, ": Prego ",
-        1:n,
-        " -> Prego ",
-        ((1:n + k - 1) %% n) + 1
-      )
-      cat(paste(conexoes_texto, collapse = "\n"), "\n")
-    }
+    conexoes_txt <- paste0(
+      "Módulo ", conexoes$grupo,
+      ": Prego ", conexoes$indice_local_inicial,
+      " -> Prego ", conexoes$indice_local_final
+    )
+    cat(paste(conexoes_txt, collapse = "\n"), "\n")
   }
 
-  if (plot && show_center) {
-    points(0, 0, pch = 19, col = center_col, cex = cex_center)
-  }
-
-  message(sprintf("Comprimento total de barbante: %.2f unidades", total_length))
-
-  invisible(list(
+  # ---------------------------------------------------------------------------
+  # Retorno padronizado
+  # ---------------------------------------------------------------------------
+  res <- list(
     pregos = pregos_all,
     conexoes = conexoes,
-    comprimento_total = total_length
-  ))
+    comprimento_total = comprimento_total,
+    meta = list(
+      figura = "radial",
+      regra = "Em cada módulo: j = (i + k - 1) %% n + 1",
+      parametros = list(
+        n = n,
+        k = k,
+        m = m,
+        r = r,
+        spread = spread,
+        col = col,
+        lwd = lwd
+      ),
+      pacote = "stringArt"
+    )
+  )
+
+  class(res) <- c("stringart_result", class(res))
+
+  invisible(res)
 }

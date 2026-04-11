@@ -2,58 +2,109 @@
 % Please edit documentation in R/stellipse.R
 \name{stellipse}
 \alias{stellipse}
-\title{Gera uma figura de String Art em formato eliptico}
+\title{Gera uma figura de String Art em formato elíptico}
 \usage{
-stellipse(n, k, a, b, col, lwd, plot = TRUE)
+stellipse(
+  n,
+  k,
+  a,
+  b,
+  ...,
+  col = "blue",
+  lwd = 1,
+  plot = TRUE,
+  show_points = FALSE,
+  cex_pregos = 0.8,
+  col_pregos = "black",
+  show_labels = FALSE,
+  cex_labels = 0.7,
+  label_col = "black",
+  verbose = TRUE
+)
 }
 \arguments{
-\item{n}{Inteiro. Numero de pregos (pontos igualmente espacado sobre a elipse).
-Deve ser pelo menos 3.}
+\item{n}{Inteiro maior ou igual a 3. Número de pregos.}
 
-\item{k}{Inteiro. Passo de ligacao entre os pregos. Por exemplo, se \code{k = 2},
-cada prego e ligado ao segundo prego adiante.}
+\item{k}{Inteiro entre 1 e \code{n - 1}. Salto modular da conexão.}
 
-\item{a}{Numerico. Semi-eixo maior (horizontal) da elipse.}
+\item{a}{Número positivo. Semi-eixo horizontal da elipse.}
 
-\item{b}{Numerico. Semi-eixo menor (vertical) da elipse.}
+\item{b}{Número positivo. Semi-eixo vertical da elipse.}
 
-\item{col}{Cor das linhas do barbante. Pode ser nome de cor (ex: \code{"blue"})
-ou codigo hexadecimal (ex: \code{"#1E90FF"}).}
+\item{...}{Argumentos adicionais não utilizados diretamente, mantidos para
+compatibilidade com o contrato padronizado do pacote.}
 
-\item{lwd}{Espessura das linhas do barbante.}
+\item{col}{Cor das conexões.}
 
-\item{plot}{Logico. Se \code{TRUE} (padrao), a elipse e as conexoes sao desenhadas.}
+\item{lwd}{Número positivo. Espessura das conexões.}
+
+\item{plot}{Lógico. Se \code{TRUE}, desenha a figura.}
+
+\item{show_points}{Lógico. Se \code{TRUE}, mostra os pregos.}
+
+\item{cex_pregos}{Número positivo. Tamanho dos pregos.}
+
+\item{col_pregos}{Cor dos pregos.}
+
+\item{show_labels}{Lógico. Se \code{TRUE}, mostra os rótulos dos pregos.}
+
+\item{cex_labels}{Número positivo. Tamanho dos rótulos.}
+
+\item{label_col}{Cor dos rótulos.}
+
+\item{verbose}{Lógico. Se \code{TRUE}, exibe mensagens informativas.}
 }
 \value{
-Invisivelmente, uma lista contendo:
+Invisivelmente, uma lista com:
 \describe{
-\item{pregos}{Data frame com coordenadas (x, y) dos pregos.}
-\item{conexoes}{Data frame com coordenadas iniciais e finais e comprimento de cada segmento.}
-\item{comprimento_total}{Valor numerico com o comprimento total do barbante.}
+\item{pregos}{\code{data.frame} com colunas \code{indice}, \code{x} e \code{y}.}
+\item{conexoes}{\code{data.frame} com colunas canônicas
+\code{indice_conexao}, \code{prego_inicial}, \code{prego_final}, \code{x_inicial},
+\code{y_inicial}, \code{x_final}, \code{y_final}, \code{comprimento}, além dos aliases
+\code{i}, \code{j}, \code{x1}, \code{y1}, \code{x2}, \code{y2}.}
+\item{comprimento_total}{Comprimento total do barbante.}
+\item{meta}{Metadados da construção.}
 }
 }
 \description{
-A funcao \code{stellipse()} cria uma figura do tipo \emph{String Art} baseada em uma
-elipse definida pelos eixos \code{a} (horizontal) e \code{b} (vertical). Os pregos sao
-igualmente espacado ao longo da elipse, e cada um e conectado ao prego \code{k}
-posicoes a frente, formando padroes geometricos interessantes. A funcao tambem
-calcula o comprimento total do barbante utilizado.
+A função \code{stellipse()} constrói uma figura de \emph{String Art} sobre uma elipse,
+posicionando \code{n} pregos ao longo do contorno elíptico e conectando cada prego
+ao prego \code{k} posições à frente, segundo uma regra modular fixa.
 }
 \details{
-A funcao constroi uma elipse com eixos \code{a} e \code{b}, distribuindo \code{n} pregos
-igualmente ao longo da sua borda. Os pregos sao conectados de acordo com o passo \code{k}.
-O resultado e uma estrutura visual similar a um padrao de \emph{String Art}, podendo ser
-usada para fins artisticos ou didaticos.
+A elipse é centrada na origem e descrita parametricamente por
+\code{x = a*cos(theta)} e \code{y = b*sin(theta)}, com os pregos numerados de \code{1} a \code{n}
+no sentido anti-horário, a partir do ponto \verb{(a, 0)}.
+
+Os pregos são distribuídos segundo uma parametrização angular da elipse,
+com ângulos igualmente espaçados em \verb{[0, 2*pi)}. A ordem dos pregos é
+explícita, geométrica, auditável e reproduzível.
+
+A regra de ligação utilizada é:
+\code{j <- (i + k - 1) \%\% n + 1}.
+
+Quando \code{gcd(n, k) = 1}, a construção percorre todos os pregos em um único
+ciclo. Quando \code{gcd(n, k) > 1}, a figura se decompõe em ciclos independentes.
 }
 \examples{
-# Exemplo basico com 30 pregos em uma elipse
-stellipse(n = 30, k = 3, a = 1, b = 0.5, col = "purple", lwd = 1.2)
+# Exemplo básico
+stellipse(n = 30, k = 3, a = 4, b = 2, col = "purple", lwd = 1.2)
 
-# Exemplo sem exibir o grafico
-res <- stellipse(n = 20, k = 4, a = 1, b = 0.7, plot = FALSE)
+# Exemplo com pregos e rótulos
+stellipse(
+  n = 20, k = 4, a = 3, b = 1.8,
+  col = "steelblue", lwd = 1,
+  show_points = TRUE,
+  show_labels = TRUE
+)
+
+# Exemplo sem gráfico
+res <- stellipse(
+  n = 24, k = 5, a = 3, b = 1.5,
+  plot = FALSE, verbose = FALSE
+)
 res$comprimento_total
+head(res$pregos)
+head(res$conexoes)
 
-}
-\seealso{
-Outras funcoes da serie StringArt, como \code{stcircle()} e \code{stline()}.
 }
