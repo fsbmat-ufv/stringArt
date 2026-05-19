@@ -7,6 +7,7 @@
 sthexaflower(
   n = 24,
   k = 5,
+  ...,
   r = 1,
   scale_mid = 0.72,
   scale_inner = 0.42,
@@ -15,20 +16,23 @@ sthexaflower(
   col = c("black", "forestgreen", "darkorange", "deepskyblue4", "firebrick", "purple"),
   lwd = 1,
   plot = TRUE,
-  show_points = TRUE,
-  cex_pregos = 0.45,
+  show_points = FALSE,
+  cex_pregos = 0.8,
   col_pregos = "black",
   show_labels = FALSE,
-  cex_labels = 0.6,
+  cex_labels = 0.7,
   label_col = "black",
-  verbose = FALSE
+  verbose = TRUE
 )
 }
 \arguments{
 \item{n}{Inteiro maior ou igual a 6 e múltiplo de 6. Número de pregos em
 cada circuito hexagonal.}
 
-\item{k}{Inteiro maior ou igual a 1. Salto entre os pregos dos circuitos.}
+\item{k}{Inteiro entre 1 e \code{n - 1}. Salto entre os pregos dos circuitos.}
+
+\item{...}{Argumentos adicionais não utilizados diretamente, mantidos para
+compatibilidade com o contrato padronizado do pacote.}
 
 \item{r}{Número positivo. Raio do circuito hexagonal externo.}
 
@@ -44,7 +48,7 @@ circuito intermediário ao longo do perímetro.}
 \item{offset_inner}{Número em \verb{[0, 1)}. Deslocamento relativo dos pregos do
 circuito interno ao longo do perímetro.}
 
-\item{col}{Vetor de cores. Pode ter comprimento 1 ou 6.}
+\item{col}{Vetor de cores de comprimento 1 ou 6.}
 
 \item{lwd}{Número positivo. Espessura das linhas.}
 
@@ -62,34 +66,28 @@ circuito interno ao longo do perímetro.}
 
 \item{label_col}{Cor dos rótulos.}
 
-\item{verbose}{Lógico. Se \code{TRUE}, imprime no console as conexões no formato
-\verb{Prego i -> Prego j}.}
+\item{verbose}{Lógico. Se \code{TRUE}, exibe mensagens informativas e imprime as
+conexões no formato \verb{Prego i -> Prego j}.}
 }
 \value{
-Retorna invisivelmente uma lista com:
+Invisivelmente, uma lista com:
 \describe{
 \item{pregos}{\code{data.frame} com colunas \code{indice}, \code{x}, \code{y} e \code{grupo}.}
-\item{conexoes}{\code{data.frame} com colunas \code{prego_inicial}, \code{prego_final},
-\code{x_inicial}, \code{y_inicial}, \code{x_final}, \code{y_final}, \code{comprimento} e \code{bloco}.}
+\item{conexoes}{\code{data.frame} com colunas canônicas
+\code{indice_conexao}, \code{prego_inicial}, \code{prego_final}, \code{x_inicial},
+\code{y_inicial}, \code{x_final}, \code{y_final}, \code{comprimento}, além dos aliases
+\code{i}, \code{j}, \code{x1}, \code{y1}, \code{x2}, \code{y2}, e das colunas extras \code{bloco} e \code{setor}.}
 \item{comprimento_total}{Comprimento total do barbante.}
+\item{meta}{Metadados da construção.}
 }
 }
 \description{
 A função \code{sthexaflower()} constrói uma figura de \emph{String Art} baseada em
 três circuitos hexagonais concêntricos de pregos e um prego central.
-Toda a figura é criada a partir de pregos numerados e conexões auditáveis.
+Toda a figura é criada a partir de pregos numerados e conexões auditáveis,
+mantendo compatibilidade com o contrato padronizado do pacote \code{stringArt}.
 }
 \details{
-O usuário define:
-\itemize{
-\item \code{n}: número de pregos em cada circuito hexagonal;
-\item \code{k}: salto entre os pregos;
-\item os parâmetros geométricos dos três circuitos.
-}
-
-Para que os pregos sejam distribuídos uniformemente ao longo dos 6 lados do
-hexágono, exige-se que \code{n} seja múltiplo de 6.
-
 Os pregos são posicionados em três circuitos hexagonais concêntricos:
 
 \enumerate{
@@ -100,26 +98,19 @@ Os pregos são posicionados em três circuitos hexagonais concêntricos:
 }
 
 Como \code{n} é múltiplo de 6, cada lado do hexágono recebe exatamente \code{n / 6}
-pregos. Assim, o contorno externo também é construído pelos próprios pregos.
+pregos, garantindo distribuição uniforme e auditável ao longo do contorno.
 
-A regra principal de conexão é:
-
-\deqn{j <- (i + k - 1) \%\% n + 1}
-
-onde \code{i} e \code{j} são índices locais em \verb{1, ..., n}.
+A regra local de salto nos circuitos é:
+\code{j <- (i + k - 1) \%\% n + 1}.
 
 As conexões são feitas em quatro blocos:
+
 \enumerate{
-\item contorno do hexágono externo: prego \code{i} do circuito externo
-\eqn{\to} prego \code{i+1};
-\item conexões do circuito externo para o intermediário com salto \code{k};
-\item conexões do circuito intermediário para o interno com salto \code{k};
-\item conexões dos 6 pregos-vértice do circuito externo para o centro.
+\item contorno do hexágono externo;
+\item externo para intermediário com salto \code{k};
+\item intermediário para interno com salto \code{k};
+\item vértices do circuito externo para o centro.
 }
-
-Os 6 pregos-vértice do circuito externo são os índices locais:
-
-\verb{1, n/6 + 1, 2n/6 + 1, ..., 5n/6 + 1}.
 }
 \examples{
 # Exemplo básico
@@ -133,7 +124,7 @@ res <- sthexaflower(
   show_labels = TRUE
 )
 
-# Imprimindo as conexões
+# Impressão textual das conexões
 res <- sthexaflower(
   n = 18,
   k = 4,
@@ -142,7 +133,4 @@ res <- sthexaflower(
   show_labels = TRUE
 )
 
-}
-\seealso{
-\code{stcircle()}, \code{stellipse()}, \code{sttriangle()}, \code{stcardioid()}, \code{stradial()}
 }

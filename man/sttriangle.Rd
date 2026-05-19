@@ -8,95 +8,107 @@ sttriangle(
   n,
   k,
   side,
-  col,
-  lwd,
-  border_col = "black",
-  border_lwd = 1.5,
-  show_points = TRUE,
-  cex_pregos = 1.1,
+  ...,
+  col = "blue",
+  lwd = 1,
+  plot = TRUE,
+  show_points = FALSE,
+  cex_pregos = 0.8,
   col_pregos = "black",
   show_labels = FALSE,
   cex_labels = 0.7,
   label_col = "black",
   verbose = TRUE,
-  plot = TRUE
+  border_col = "grey50",
+  border_lwd = 1
 )
 }
 \arguments{
-\item{n}{Inteiro. Numero de pregos distribuidos ao longo do contorno do
-triangulo. Deve ser pelo menos 3.}
+\item{n}{Inteiro maior ou igual a 3. Número de pregos.}
 
-\item{k}{Inteiro. Passo de ligacao entre os pregos. Por exemplo, se \code{k = 2},
-cada prego e ligado ao segundo prego adiante.}
+\item{k}{Inteiro entre 1 e \code{n - 1}. Salto modular da conexão.}
 
-\item{side}{Numerico. Comprimento do lado do triangulo equilatero.}
+\item{side}{Número positivo. Comprimento do lado do triângulo equilátero.}
 
-\item{col}{Cor das linhas do barbante. Pode ser nome de cor (ex: \code{"blue"})
-ou codigo hexadecimal.}
+\item{...}{Argumentos adicionais não utilizados diretamente, mantidos para
+compatibilidade com o contrato padronizado do pacote.}
 
-\item{lwd}{Espessura das linhas do barbante.}
+\item{col}{Cor das conexões.}
 
-\item{border_col}{Cor da borda do triangulo.}
+\item{lwd}{Número positivo. Espessura das conexões.}
 
-\item{border_lwd}{Espessura da borda do triangulo.}
+\item{plot}{Lógico. Se \code{TRUE}, desenha a figura.}
 
-\item{show_points}{Logico. Se \code{TRUE} (padrao), os pregos sao desenhados.}
+\item{show_points}{Lógico. Se \code{TRUE}, mostra os pregos.}
 
-\item{cex_pregos}{Numerico. Tamanho dos pregos no grafico.}
+\item{cex_pregos}{Número positivo. Tamanho dos pregos.}
 
 \item{col_pregos}{Cor dos pregos.}
 
-\item{show_labels}{Logico. Se \code{TRUE}, escreve o indice de cada prego.}
+\item{show_labels}{Lógico. Se \code{TRUE}, mostra os rótulos dos pregos.}
 
-\item{cex_labels}{Numerico. Tamanho dos rotulos.}
+\item{cex_labels}{Número positivo. Tamanho dos rótulos.}
 
-\item{label_col}{Cor dos rotulos.}
+\item{label_col}{Cor dos rótulos.}
 
-\item{verbose}{Logico. Se \code{TRUE}, imprime no console as conexoes no formato
-\verb{Prego i -> Prego j}.}
+\item{verbose}{Lógico. Se \code{TRUE}, exibe mensagens informativas.}
 
-\item{plot}{Logico. Se \code{TRUE} (padrao), o grafico e desenhado.}
+\item{border_col}{Cor da borda do triângulo.}
+
+\item{border_lwd}{Número positivo. Espessura da borda do triângulo.}
 }
 \value{
-Invisivelmente, uma lista contendo:
+Invisivelmente, uma lista com:
 \describe{
-\item{pregos}{Data frame com indice e coordenadas \verb{(x, y)} dos pregos.}
-\item{conexoes}{Data frame com indices inicial e final, coordenadas e comprimento de cada segmento.}
-\item{vertices}{Data frame com os vertices do triangulo.}
-\item{comprimento_total}{Valor numerico com o comprimento total do barbante.}
+\item{pregos}{\code{data.frame} com colunas \code{indice}, \code{x} e \code{y}.}
+\item{conexoes}{\code{data.frame} com colunas canônicas
+\code{indice_conexao}, \code{prego_inicial}, \code{prego_final}, \code{x_inicial},
+\code{y_inicial}, \code{x_final}, \code{y_final}, \code{comprimento}, além dos aliases
+\code{i}, \code{j}, \code{x1}, \code{y1}, \code{x2}, \code{y2}.}
+\item{comprimento_total}{Comprimento total do barbante.}
+\item{vertices}{\code{data.frame} com os vértices do triângulo.}
+\item{meta}{Metadados da construção.}
 }
 }
 \description{
-A funcao \code{sttriangle()} cria uma figura do tipo \emph{String Art} em formato
-triangular, conectando pontos (pregos) igualmente espacados ao longo do
-contorno de um triangulo equilatero. Cada prego e conectado ao prego \code{k}
-posicoes a frente, formando padroes geometricos visualmente interessantes.
-Alem disso, a funcao calcula o comprimento total do barbante necessario e
-retorna as coordenadas e conexoes utilizadas.
+A função \code{sttriangle()} constrói uma figura de \emph{String Art} sobre o contorno
+de um triângulo equilátero, posicionando \code{n} pregos ao longo do perímetro e
+conectando cada prego ao prego \code{k} posições à frente, segundo uma regra
+modular fixa.
 }
 \details{
-A funcao constroi um triangulo equilatero de lado \code{side} e distribui \code{n}
-pregos igualmente ao longo de seu contorno. Em seguida, cada prego \code{i} e
-conectado ao prego \code{j}, onde
+O triângulo é construído com um lado horizontal na base, centrado de forma
+simples no plano, e os pregos são numerados de \code{1} a \code{n} ao longo do
+perímetro no sentido anti-horário, começando no vértice inferior esquerdo.
 
-\deqn{j = ((i + k - 2) \bmod n) + 1}
+Os pregos são distribuídos uniformemente ao longo do perímetro do triângulo
+equilátero, o que garante uma ordenação geométrica, auditável e reproduzível.
 
-produzindo uma figura do tipo \emph{String Art}.
+A regra de ligação utilizada é:
+\code{j <- (i + k - 1) \%\% n + 1}.
+
+Quando \code{gcd(n, k) = 1}, a construção percorre todos os pregos em um único
+ciclo. Quando \code{gcd(n, k) > 1}, a figura se decompõe em ciclos independentes.
 }
 \examples{
-# Exemplo basico
+# Exemplo básico
 sttriangle(n = 30, k = 7, side = 2, col = "blue", lwd = 1)
 
-# Exemplo com auditoria visual
-sttriangle(n = 12, k = 3, side = 2,
-           col = "red", lwd = 1,
-           show_labels = TRUE, verbose = TRUE)
+# Exemplo com pregos e rótulos
+sttriangle(
+  n = 18, k = 5, side = 2,
+  col = "red", lwd = 1,
+  show_points = TRUE,
+  show_labels = TRUE
+)
 
-# Exemplo sem exibir o grafico
-res <- sttriangle(n = 20, k = 4, side = 2, col = "purple", lwd = 1, plot = FALSE)
+# Exemplo sem gráfico
+res <- sttriangle(
+  n = 20, k = 4, side = 2,
+  plot = FALSE, verbose = FALSE
+)
 res$comprimento_total
+head(res$pregos)
+head(res$conexoes)
 
-}
-\seealso{
-Outras funcoes da serie StringArt, como \code{stcircle()} e \code{stellipse()}.
 }

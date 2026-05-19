@@ -6,113 +6,122 @@
 \usage{
 stcardioid(
   n,
-  mult = 2,
+  k,
   r = 1,
+  ...,
   col = "antiquewhite",
   lwd = 0.8,
-  col_pregos = "darkorange2",
+  plot = TRUE,
+  show_points = FALSE,
   cex_pregos = 0.8,
+  col_pregos = "darkorange2",
+  show_labels = FALSE,
+  cex_labels = 0.7,
+  label_col = "black",
+  verbose = TRUE,
   pch_pregos = 21,
   bg_pregos = "white",
   border_col = "goldenrod3",
   border_lwd = 1.2,
   bg = "white",
-  rotate = 0,
-  show_labels = FALSE,
-  cex_labels = 0.7,
-  label_col = "black",
-  verbose = FALSE,
-  plot = TRUE
+  rotate = 0
 )
 }
 \arguments{
-\item{n}{Inteiro. Numero de pregos distribuidos ao longo da circunferencia.
-Deve ser pelo menos 3.}
+\item{n}{Inteiro maior ou igual a 3. Número de pregos.}
 
-\item{mult}{Numerico. Fator multiplicativo usado para definir as conexoes.
-Por exemplo, se \code{mult = 2}, o prego de indice \code{i} e conectado ao prego
-de indice \code{2*i} (modulo \code{n}, com indexacao iniciando em 1).}
+\item{k}{Inteiro entre 1 e \code{n - 1}. Fator multiplicativo modular da conexão.}
 
-\item{r}{Numerico. Raio da circunferencia.}
+\item{r}{Número positivo. Raio da circunferência.}
 
-\item{col}{Cor das linhas do barbante. Pode ser nome de cor
-(ex: \code{"wheat"}) ou codigo hexadecimal.}
+\item{...}{Argumentos adicionais não utilizados diretamente, mantidos para
+compatibilidade com o contrato padronizado do pacote.}
 
-\item{lwd}{Numerico. Espessura das linhas do barbante.}
+\item{col}{Cor das conexões.}
 
-\item{col_pregos}{Cor dos pregos.}
+\item{lwd}{Número positivo. Espessura das conexões.}
 
-\item{cex_pregos}{Numerico. Tamanho dos pregos no grafico.}
+\item{plot}{Lógico. Se \code{TRUE}, desenha a figura.}
 
-\item{pch_pregos}{Simbolo grafico dos pregos.}
+\item{show_points}{Lógico. Se \code{TRUE}, mostra os pregos.}
 
-\item{bg_pregos}{Cor de preenchimento dos pregos quando aplicavel.}
+\item{cex_pregos}{Número positivo. Tamanho dos pregos.}
 
-\item{border_col}{Cor da circunferencia externa.}
+\item{col_pregos}{Cor da borda dos pregos.}
 
-\item{border_lwd}{Numerico. Espessura da borda externa.}
+\item{show_labels}{Lógico. Se \code{TRUE}, mostra os rótulos dos pregos.}
 
-\item{bg}{Cor de fundo do grafico.}
+\item{cex_labels}{Número positivo. Tamanho dos rótulos.}
 
-\item{rotate}{Numerico. Angulo de rotacao, em radianos, aplicado a toda a figura.
-Permite mudar a orientacao visual do padrao.}
+\item{label_col}{Cor dos rótulos.}
 
-\item{show_labels}{Logico. Se \code{TRUE}, escreve o indice de cada prego.}
+\item{verbose}{Lógico. Se \code{TRUE}, exibe mensagens informativas.}
 
-\item{cex_labels}{Numerico. Tamanho dos rotulos dos pregos.}
+\item{pch_pregos}{Símbolo gráfico dos pregos.}
 
-\item{label_col}{Cor dos rotulos dos pregos.}
+\item{bg_pregos}{Cor de preenchimento dos pregos, quando aplicável.}
 
-\item{verbose}{Logico. Se \code{TRUE}, imprime no console as conexoes no formato
-\verb{Prego i -> Prego j}.}
+\item{border_col}{Cor da circunferência externa.}
 
-\item{plot}{Logico. Se \code{TRUE} (padrao), o grafico e desenhado.}
+\item{border_lwd}{Número positivo. Espessura da borda externa.}
+
+\item{bg}{Cor de fundo do gráfico.}
+
+\item{rotate}{Número real. Ângulo de rotação, em radianos.}
 }
 \value{
-Invisivelmente, uma lista contendo:
+Invisivelmente, uma lista com:
 \describe{
-\item{pregos}{Data frame com coordenadas \verb{(x, y)} e indice dos pregos.}
-\item{conexoes}{Data frame com indices inicial e final, coordenadas e comprimento de cada segmento.}
-\item{comprimento_total}{Valor numerico com o comprimento total do barbante.}
+\item{pregos}{\code{data.frame} com colunas \code{indice}, \code{x} e \code{y}.}
+\item{conexoes}{\code{data.frame} com colunas canônicas
+\code{indice_conexao}, \code{prego_inicial}, \code{prego_final}, \code{x_inicial},
+\code{y_inicial}, \code{x_final}, \code{y_final}, \code{comprimento}, além dos aliases
+\code{i}, \code{j}, \code{x1}, \code{y1}, \code{x2}, \code{y2}.}
+\item{comprimento_total}{Comprimento total do barbante.}
+\item{meta}{Metadados da construção.}
 }
 }
 \description{
-A funcao \code{stcardioid()} cria uma figura do tipo \emph{String Art} baseada em uma
-circunferencia. Os pregos sao igualmente espacados ao longo da borda do
-circulo, e cada prego e conectado a outro conforme uma regra multiplicativa
-controlada pelo parametro \code{mult}. Esse tipo de construcao gera padroes
-geometricos classicos de \emph{String Art}, incluindo figuras semelhantes a
-cardioides e outras curvas envolventes.
+A função \code{stcardioid()} constrói uma figura de \emph{String Art} sobre uma
+circunferência, posicionando \code{n} pregos igualmente espaçados e conectando
+cada prego ao prego determinado por uma regra multiplicativa modular baseada
+em \code{k}.
 }
 \details{
-A funcao distribui \code{n} pregos igualmente sobre uma circunferencia de raio \code{r}.
-Em seguida, para cada prego \code{i}, desenha-se um segmento ligando esse ponto ao
-prego de indice
+A circunferência é centrada na origem, com raio \code{r}, e os pregos são
+numerados de \code{1} a \code{n} no sentido anti-horário, a partir do ponto
+\verb{(r, 0)}, podendo ser rotacionados por \code{rotate}.
 
-\deqn{j = ((\mathrm{round}(mult * (i - 1))) \bmod n) + 1}
+Os pregos são distribuídos uniformemente sobre uma circunferência de raio \code{r}.
+A ordem dos pregos é explícita, geométrica, auditável e reproduzível.
 
-Essa regra produz padroes visuais ricos e bastante conhecidos em \emph{String Art}.
-Quando \code{mult = 2}, por exemplo, surge uma figura classica semelhante a uma
-cardioide. Outros valores podem gerar variacoes igualmente interessantes.
+A regra de ligação utilizada é:
+\code{j <- ((k * (i - 1)) \%\% n) + 1}.
 
-Os pregos podem ser desenhados com destaque e numerados para facilitar a
-verificacao da regra de conexao.
+Essa regra gera padrões clássicos de \emph{String Art} baseados em tabelas
+multiplicativas modulares. Quando \code{k = 2}, obtém-se a figura clássica
+associada ao efeito de cardioide.
 }
 \examples{
-# Exemplo basico
-stcardioid(n = 120, mult = 2, r = 1,
-           col = "wheat", lwd = 0.8)
+# Exemplo básico
+stcardioid(n = 120, k = 2, r = 1, col = "wheat", lwd = 0.8)
 
 # Exemplo com auditoria visual
-stcardioid(n = 12, mult = 2, r = 1,
-           col = "steelblue", lwd = 1,
-           show_labels = TRUE, verbose = TRUE)
+stcardioid(
+  n = 12, k = 2, r = 1,
+  col = "steelblue", lwd = 1,
+  show_points = TRUE,
+  show_labels = TRUE,
+  verbose = TRUE
+)
 
-# Exemplo sem exibir o grafico
-res <- stcardioid(n = 80, mult = 2, r = 1, plot = FALSE)
+# Exemplo sem gráfico
+res <- stcardioid(
+  n = 80, k = 2, r = 1,
+  plot = FALSE, verbose = FALSE
+)
 res$comprimento_total
+head(res$pregos)
+head(res$conexoes)
 
-}
-\seealso{
-Outras funcoes da serie StringArt, como \code{stcircle()}, \code{stellipse()} e \code{sttriangle()}.
 }
