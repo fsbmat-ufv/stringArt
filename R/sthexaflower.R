@@ -1,194 +1,207 @@
-#' Gera uma figura hexagonal de String Art com três circuitos de pregos
+#' Generate a hexagonal flower string art pattern
 #'
-#' A função `sthexaflower()` constrói uma figura de *String Art* baseada em
-#' três circuitos hexagonais concêntricos de pregos e um prego central.
-#' Toda a figura é criada a partir de pregos numerados e conexões auditáveis,
-#' mantendo compatibilidade com o contrato padronizado do pacote `stringArt`.
+#' `sthexaflower()` generates a string art pattern based on three concentric
+#' hexagonal peg circuits and one central peg. The construction is fully
+#' reproducible and returns both the peg coordinates and the connection table.
 #'
-#' @param n Inteiro maior ou igual a 6 e múltiplo de 6. Número de pregos em
-#'   cada circuito hexagonal.
-#' @param k Inteiro entre 1 e `n - 1`. Salto entre os pregos dos circuitos.
-#' @param ... Argumentos adicionais não utilizados diretamente, mantidos para
-#'   compatibilidade com o contrato padronizado do pacote.
-#' @param r Número positivo. Raio do circuito hexagonal externo.
-#' @param scale_mid Número em `(0, 1)`. Escala do circuito intermediário em
-#'   relação ao externo.
-#' @param scale_inner Número em `(0, scale_mid)`. Escala do circuito interno em
-#'   relação ao externo.
-#' @param offset_mid Número em `[0, 1)`. Deslocamento relativo dos pregos do
-#'   circuito intermediário ao longo do perímetro.
-#' @param offset_inner Número em `[0, 1)`. Deslocamento relativo dos pregos do
-#'   circuito interno ao longo do perímetro.
-#' @param col Vetor de cores de comprimento 1 ou 6.
-#' @param lwd Número positivo. Espessura das linhas.
-#' @param plot Lógico. Se `TRUE`, desenha a figura.
-#' @param show_points Lógico. Se `TRUE`, mostra os pregos.
-#' @param cex_pregos Número positivo. Tamanho dos pregos.
-#' @param col_pregos Cor dos pregos.
-#' @param show_labels Lógico. Se `TRUE`, mostra os índices dos pregos.
-#' @param cex_labels Número positivo. Tamanho dos rótulos.
-#' @param label_col Cor dos rótulos.
-#' @param verbose Lógico. Se `TRUE`, exibe mensagens informativas e imprime as
-#'   conexões no formato `Prego i -> Prego j`.
+#' @param n Integer. Number of pegs in each hexagonal circuit. Must be a
+#'   multiple of 6 and at least 6.
+#' @param k Integer. Step used in the local modular connection rule. Must
+#'   satisfy `1 <= k <= n - 1`.
+#' @param col String color passed to [graphics::segments()]. It may have length
+#'   1 or 6. If length 6, colors are used by sector.
+#' @param lwd Positive number. Line width used to draw the strings.
+#' @param plot Logical. If `TRUE`, draws the figure.
+#' @param show_points Logical. If `TRUE`, draws the pegs.
+#' @param show_labels Logical. If `TRUE`, draws peg labels.
+#' @param verbose Logical. If `TRUE`, prints a short audit to the console.
+#' @param r Positive number. Radius of the outer hexagonal circuit.
+#' @param scale_mid Positive number in `(0, 1)`. Scale of the middle hexagonal
+#'   circuit relative to the outer circuit.
+#' @param scale_inner Positive number in `(0, scale_mid)`. Scale of the inner
+#'   hexagonal circuit relative to the outer circuit.
+#' @param offset_mid Numeric value in `[0, 1)`. Discrete relative offset applied
+#'   to the middle circuit along the peg sequence.
+#' @param offset_inner Numeric value in `[0, 1)`. Discrete relative offset
+#'   applied to the inner circuit along the peg sequence.
+#' @param rotate Numeric. Rotation angle in radians applied to the whole figure.
+#' @param show_strings Logical. If `TRUE`, draws the string connections.
+#' @param template Logical. If `TRUE`, draws only the peg template, without
+#'   string connections. This is equivalent to setting `show_strings = FALSE`
+#'   and `show_points = TRUE`.
+#' @param point_col Peg color.
+#' @param point_cex Positive number. Peg size.
+#' @param point_pch Plotting symbol used for pegs.
+#' @param point_bg Peg background color when applicable.
+#' @param label_cex Positive number. Label size.
+#' @param label_col Label color.
+#' @param border_col Hexagonal border color.
+#' @param border_lwd Positive number. Hexagonal border line width.
+#' @param bg Plot background color.
+#' @param main Optional plot title. If `NULL`, no title is displayed.
 #'
 #' @details
-#' Os pregos são posicionados em três circuitos hexagonais concêntricos:
+#' The function builds three concentric hexagonal circuits with `n` pegs each
+#' and one central peg.
 #'
-#' \enumerate{
-#'   \item circuito externo: `1, ..., n`;
-#'   \item circuito intermediário: `n + 1, ..., 2n`;
-#'   \item circuito interno: `2n + 1, ..., 3n`;
-#'   \item centro: `3n + 1`.
-#' }
+#' The peg table contains the columns `index`, `x`, `y`, `group`, `layer`, and
+#' `local_index`.
 #'
-#' Como `n` é múltiplo de 6, cada lado do hexágono recebe exatamente `n / 6`
-#' pregos, garantindo distribuição uniforme e auditável ao longo do contorno.
+#' The construction uses four connection blocks:
 #'
-#' A regra local de salto nos circuitos é:
-#' `j <- (i + k - 1) %% n + 1`.
+#' - `outer_border`: consecutive connections on the outer hexagon.
+#' - `outer_to_middle`: connections from the outer circuit to the middle circuit.
+#' - `middle_to_inner`: connections from the middle circuit to the inner circuit.
+#' - `vertices_to_center`: connections from the outer vertices to the central peg.
 #'
-#' As conexões são feitas em quatro blocos:
+#' The local additive modular rule used in the two radial blocks is
 #'
-#' \enumerate{
-#'   \item contorno do hexágono externo;
-#'   \item externo para intermediário com salto `k`;
-#'   \item intermediário para interno com salto `k`;
-#'   \item vértices do circuito externo para o centro.
-#' }
+#' `to_local = ((from_local + k - 1) %% n) + 1`.
 #'
-#' @return Invisivelmente, uma lista com:
+#' @return Invisibly returns a list of class `stringart_result` with:
 #' \describe{
-#'   \item{pregos}{`data.frame` com colunas `indice`, `x`, `y` e `grupo`.}
-#'   \item{conexoes}{`data.frame` com colunas canônicas
-#'   `indice_conexao`, `prego_inicial`, `prego_final`, `x_inicial`,
-#'   `y_inicial`, `x_final`, `y_final`, `comprimento`, além dos aliases
-#'   `i`, `j`, `x1`, `y1`, `x2`, `y2`, e das colunas extras `bloco` e `setor`.}
-#'   \item{comprimento_total}{Comprimento total do barbante.}
-#'   \item{meta}{Metadados da construção.}
+#'   \item{pegs}{A `data.frame` with peg coordinates and metadata.}
+#'   \item{connections}{A `data.frame` with columns `connection_index`,
+#'   `from`, `to`, `x_from`, `y_from`, `x_to`, `y_to`, `length`, `block`, and
+#'   `sector`.}
+#'   \item{total_length}{Total string length.}
+#'   \item{audit}{A character vector with audit information.}
+#'   \item{meta}{A list with construction metadata.}
 #' }
 #'
 #' @examples
-#' # Exemplo básico
-#' res <- sthexaflower(n = 24, k = 5)
+#' sthexaflower()
 #'
-#' # Mostrando pregos e rótulos
-#' res <- sthexaflower(
-#'   n = 24,
-#'   k = 7,
-#'   show_points = TRUE,
-#'   show_labels = TRUE
-#' )
+#' res <- sthexaflower(plot = FALSE)
+#' head(res$pegs)
+#' head(res$connections)
+#' res$total_length
 #'
-#' # Impressão textual das conexões
-#' res <- sthexaflower(
-#'   n = 18,
-#'   k = 4,
-#'   verbose = TRUE,
-#'   show_points = TRUE,
-#'   show_labels = TRUE
-#' )
+#' sthexaflower(n = 30, k = 7, col = "steelblue", lwd = 0.8)
+#' sthexaflower(n = 24, k = 5, show_points = TRUE, show_labels = TRUE)
+#' sthexaflower(template = TRUE)
 #'
-#' @importFrom graphics plot segments points text
+#' @importFrom graphics par plot lines segments points text
 #' @export
-sthexaflower <- function(
-    n = 24,
-    k = 5,
-    ...,
-    r = 1,
-    scale_mid = 0.72,
-    scale_inner = 0.42,
-    offset_mid = 0,
-    offset_inner = 0,
-    col = c("black", "forestgreen", "darkorange",
-            "deepskyblue4", "firebrick", "purple"),
-    lwd = 1,
-    plot = TRUE,
-    show_points = FALSE,
-    cex_pregos = 0.8,
-    col_pregos = "black",
-    show_labels = FALSE,
-    cex_labels = 0.7,
-    label_col = "black",
-    verbose = TRUE
-) {
+sthexaflower <- function(n = 24,
+                         k = 5,
+                         col = c("black", "forestgreen", "darkorange",
+                                 "deepskyblue4", "firebrick", "purple"),
+                         lwd = 1,
+                         plot = TRUE,
+                         show_points = TRUE,
+                         show_labels = FALSE,
+                         verbose = FALSE,
+                         r = 1,
+                         scale_mid = 0.72,
+                         scale_inner = 0.42,
+                         offset_mid = 0,
+                         offset_inner = 0,
+                         rotate = 0,
+                         show_strings = TRUE,
+                         template = FALSE,
+                         point_col = "black",
+                         point_cex = 0.8,
+                         point_pch = 19,
+                         point_bg = "white",
+                         label_cex = 0.7,
+                         label_col = "black",
+                         border_col = "grey50",
+                         border_lwd = 1,
+                         bg = "white",
+                         main = NULL) {
 
-  # ---------------------------------------------------------------------------
-  # Validações
-  # ---------------------------------------------------------------------------
   if (!is.numeric(n) || length(n) != 1L || is.na(n) ||
       n != as.integer(n) || n < 6L) {
-    stop("`n` must be a single integer greater than or equal to 6.")
+    stop("`n` must be a single integer greater than or equal to 6.", call. = FALSE)
   }
 
   n <- as.integer(n)
 
   if (n %% 6L != 0L) {
-    stop("`n` must be a multiple of 6.")
+    stop("`n` must be a multiple of 6.", call. = FALSE)
   }
 
   if (!is.numeric(k) || length(k) != 1L || is.na(k) ||
       k != as.integer(k) || k < 1L) {
-    stop("`k` must be a single positive integer.")
+    stop("`k` must be a single positive integer.", call. = FALSE)
   }
 
   k <- as.integer(k)
 
   if (k >= n) {
-    stop("`k` must satisfy 1 <= k <= n - 1.")
+    stop("`k` must satisfy 1 <= k <= n - 1.", call. = FALSE)
   }
 
   if (!is.numeric(r) || length(r) != 1L || is.na(r) || r <= 0) {
-    stop("`r` must be a single positive number.")
+    stop("`r` must be a single positive number.", call. = FALSE)
   }
 
   if (!is.numeric(scale_mid) || length(scale_mid) != 1L || is.na(scale_mid) ||
       scale_mid <= 0 || scale_mid >= 1) {
-    stop("`scale_mid` must be in (0, 1).")
+    stop("`scale_mid` must be a single number in (0, 1).", call. = FALSE)
   }
 
   if (!is.numeric(scale_inner) || length(scale_inner) != 1L || is.na(scale_inner) ||
       scale_inner <= 0 || scale_inner >= scale_mid) {
-    stop("`scale_inner` must be in (0, scale_mid).")
+    stop("`scale_inner` must be a single number in (0, scale_mid).", call. = FALSE)
   }
 
   if (!is.numeric(offset_mid) || length(offset_mid) != 1L || is.na(offset_mid) ||
       offset_mid < 0 || offset_mid >= 1) {
-    stop("`offset_mid` must be in [0, 1).")
+    stop("`offset_mid` must be a single number in [0, 1).", call. = FALSE)
   }
 
-  if (!is.numeric(offset_inner) || length(offset_inner) != 1L || is.na(offset_inner) ||
-      offset_inner < 0 || offset_inner >= 1) {
-    stop("`offset_inner` must be in [0, 1).")
+  if (!is.numeric(offset_inner) || length(offset_inner) != 1L ||
+      is.na(offset_inner) || offset_inner < 0 || offset_inner >= 1) {
+    stop("`offset_inner` must be a single number in [0, 1).", call. = FALSE)
   }
 
   if (!is.numeric(lwd) || length(lwd) != 1L || is.na(lwd) || lwd <= 0) {
-    stop("`lwd` must be a single positive number.")
+    stop("`lwd` must be a single positive number.", call. = FALSE)
+  }
+
+  if (!is.numeric(border_lwd) || length(border_lwd) != 1L ||
+      is.na(border_lwd) || border_lwd <= 0) {
+    stop("`border_lwd` must be a single positive number.", call. = FALSE)
+  }
+
+  if (!is.numeric(rotate) || length(rotate) != 1L || is.na(rotate)) {
+    stop("`rotate` must be a single numeric value.", call. = FALSE)
   }
 
   if (!is.logical(plot) || length(plot) != 1L || is.na(plot)) {
-    stop("`plot` must be TRUE or FALSE.")
+    stop("`plot` must be TRUE or FALSE.", call. = FALSE)
   }
 
   if (!is.logical(show_points) || length(show_points) != 1L || is.na(show_points)) {
-    stop("`show_points` must be TRUE or FALSE.")
+    stop("`show_points` must be TRUE or FALSE.", call. = FALSE)
   }
 
   if (!is.logical(show_labels) || length(show_labels) != 1L || is.na(show_labels)) {
-    stop("`show_labels` must be TRUE or FALSE.")
+    stop("`show_labels` must be TRUE or FALSE.", call. = FALSE)
   }
 
   if (!is.logical(verbose) || length(verbose) != 1L || is.na(verbose)) {
-    stop("`verbose` must be TRUE or FALSE.")
+    stop("`verbose` must be TRUE or FALSE.", call. = FALSE)
   }
 
-  if (!is.numeric(cex_pregos) || length(cex_pregos) != 1L ||
-      is.na(cex_pregos) || cex_pregos <= 0) {
-    stop("`cex_pregos` must be a single positive number.")
+  if (!is.logical(show_strings) || length(show_strings) != 1L || is.na(show_strings)) {
+    stop("`show_strings` must be TRUE or FALSE.", call. = FALSE)
   }
 
-  if (!is.numeric(cex_labels) || length(cex_labels) != 1L ||
-      is.na(cex_labels) || cex_labels <= 0) {
-    stop("`cex_labels` must be a single positive number.")
+  if (!is.logical(template) || length(template) != 1L || is.na(template)) {
+    stop("`template` must be TRUE or FALSE.", call. = FALSE)
+  }
+
+  if (!is.numeric(point_cex) || length(point_cex) != 1L ||
+      is.na(point_cex) || point_cex <= 0) {
+    stop("`point_cex` must be a single positive number.", call. = FALSE)
+  }
+
+  if (!is.numeric(label_cex) || length(label_cex) != 1L ||
+      is.na(label_cex) || label_cex <= 0) {
+    stop("`label_cex` must be a single positive number.", call. = FALSE)
   }
 
   if (length(col) == 1L) {
@@ -196,65 +209,79 @@ sthexaflower <- function(
   }
 
   if (length(col) != 6L) {
-    stop("`col` must have length 1 or 6.")
+    stop("`col` must have length 1 or 6.", call. = FALSE)
   }
 
-  # ---------------------------------------------------------------------------
-  # Funções auxiliares
-  # ---------------------------------------------------------------------------
-  dist_pts <- function(x1, y1, x2, y2) {
-    sqrt((x2 - x1)^2 + (y2 - y1)^2)
+  if (template) {
+    show_strings <- FALSE
+    show_points <- TRUE
   }
 
   gcd_int <- function(x, y) {
     x <- abs(as.integer(x))
     y <- abs(as.integer(y))
+
     while (y != 0L) {
       tmp <- y
       y <- x %% y
       x <- tmp
     }
+
     x
   }
 
-  hex_vertices <- function(radius) {
-    ang <- seq(pi / 2, pi / 2 + 2 * pi, length.out = 7L)[1:6]
+  rotate_points <- function(x, y, angle) {
     data.frame(
-      x = radius * cos(ang),
-      y = radius * sin(ang)
+      x = x * cos(angle) - y * sin(angle),
+      y = x * sin(angle) + y * cos(angle)
     )
   }
 
-  hex_perimeter_points <- function(radius, n_pts, offset = 0) {
+  hex_vertices <- function(radius) {
+    angles <- seq(pi / 2, pi / 2 + 2 * pi, length.out = 7L)[1:6]
+
+    xy <- rotate_points(
+      x = radius * cos(angles),
+      y = radius * sin(angles),
+      angle = rotate
+    )
+
+    data.frame(x = xy$x, y = xy$y)
+  }
+
+  hex_perimeter_points <- function(radius, n_points, offset = 0) {
     vertices <- hex_vertices(radius)
     vertices_next <- rbind(vertices[2:6, ], vertices[1, ])
 
-    m <- as.integer(n_pts / 6L)
+    points_per_side <- as.integer(n_points / 6L)
+
     pts <- data.frame(
-      x = numeric(n_pts),
-      y = numeric(n_pts)
+      x = numeric(n_points),
+      y = numeric(n_points)
     )
 
     idx <- 1L
-    for (side in 1:6) {
+
+    for (side in seq_len(6L)) {
       x1 <- vertices$x[side]
       y1 <- vertices$y[side]
       x2 <- vertices_next$x[side]
       y2 <- vertices_next$y[side]
 
-      alpha <- seq(0, 1, length.out = m + 1L)[1:m]
+      alpha_values <- seq(0, 1, length.out = points_per_side + 1L)[1:points_per_side]
 
-      for (a in alpha) {
-        pts$x[idx] <- (1 - a) * x1 + a * x2
-        pts$y[idx] <- (1 - a) * y1 + a * y2
+      for (alpha in alpha_values) {
+        pts$x[idx] <- (1 - alpha) * x1 + alpha * x2
+        pts$y[idx] <- (1 - alpha) * y1 + alpha * y2
         idx <- idx + 1L
       }
     }
 
     if (offset != 0) {
-      shift <- as.integer(round(offset * n_pts)) %% n_pts
+      shift <- as.integer(round(offset * n_points)) %% n_points
+
       if (shift > 0L) {
-        pts <- pts[c((shift + 1L):n_pts, 1:shift), , drop = FALSE]
+        pts <- pts[c((shift + 1L):n_points, seq_len(shift)), , drop = FALSE]
         rownames(pts) <- NULL
       }
     }
@@ -262,246 +289,248 @@ sthexaflower <- function(
     pts
   }
 
-  sector_from_local_index <- function(i, n_local) {
-    m <- as.integer(n_local / 6L)
-    s <- as.integer(((i - 1L) %/% m) + 1L)
-    if (s > 6L) s <- 6L
-    s
+  sector_from_local_index <- function(local_index, n_local) {
+    points_per_side <- as.integer(n_local / 6L)
+    sector <- as.integer(((local_index - 1L) %/% points_per_side) + 1L)
+    min(sector, 6L)
   }
 
-  # ---------------------------------------------------------------------------
-  # Pregos
-  # ---------------------------------------------------------------------------
-  outer_pts <- hex_perimeter_points(r, n, 0)
-  mid_pts   <- hex_perimeter_points(r * scale_mid, n, offset_mid)
-  inner_pts <- hex_perimeter_points(r * scale_inner, n, offset_inner)
+  outer_pts <- hex_perimeter_points(r, n, offset = 0)
+  middle_pts <- hex_perimeter_points(r * scale_mid, n, offset = offset_mid)
+  inner_pts <- hex_perimeter_points(r * scale_inner, n, offset = offset_inner)
 
-  pregos <- data.frame(
-    indice = seq_len(3L * n + 1L),
-    x = c(outer_pts$x, mid_pts$x, inner_pts$x, 0),
-    y = c(outer_pts$y, mid_pts$y, inner_pts$y, 0),
-    grupo = c(
-      rep("externo", n),
-      rep("intermediario", n),
-      rep("interno", n),
-      "centro"
+  pegs <- data.frame(
+    index = seq_len(3L * n + 1L),
+    x = c(outer_pts$x, middle_pts$x, inner_pts$x, 0),
+    y = c(outer_pts$y, middle_pts$y, inner_pts$y, 0),
+    group = c(
+      rep("outer", n),
+      rep("middle", n),
+      rep("inner", n),
+      "center"
     ),
+    layer = c(rep(1L, n), rep(2L, n), rep(3L, n), 0L),
+    local_index = c(seq_len(n), seq_len(n), seq_len(n), NA_integer_),
     stringsAsFactors = FALSE
   )
 
   outer_ids <- seq_len(n)
-  mid_ids   <- n + seq_len(n)
+  middle_ids <- n + seq_len(n)
   inner_ids <- 2L * n + seq_len(n)
   center_id <- 3L * n + 1L
 
-  # ---------------------------------------------------------------------------
-  # Conexões
-  # ---------------------------------------------------------------------------
-  conexoes_list <- list()
+  connections_list <- list()
 
-  add_connection <- function(i, j, bloco, setor = NA_integer_) {
-    p1 <- pregos[i, ]
-    p2 <- pregos[j, ]
+  add_connection <- function(from, to, block, sector = NA_integer_) {
+    p_from <- pegs[from, ]
+    p_to <- pegs[to, ]
 
-    comp <- dist_pts(p1$x, p1$y, p2$x, p2$y)
+    connection_index <- length(connections_list) + 1L
 
-    idx_conn <- length(conexoes_list) + 1L
-    conexoes_list[[idx_conn]] <<- data.frame(
-      indice_conexao = idx_conn,
-      prego_inicial = i,
-      prego_final = j,
-      x_inicial = p1$x,
-      y_inicial = p1$y,
-      x_final = p2$x,
-      y_final = p2$y,
-      comprimento = comp,
-      i = i,
-      j = j,
-      x1 = p1$x,
-      y1 = p1$y,
-      x2 = p2$x,
-      y2 = p2$y,
-      bloco = bloco,
-      setor = setor,
+    connections_list[[connection_index]] <<- data.frame(
+      connection_index = connection_index,
+      from = from,
+      to = to,
+      x_from = p_from$x,
+      y_from = p_from$y,
+      x_to = p_to$x,
+      y_to = p_to$y,
+      length = sqrt((p_to$x - p_from$x)^2 + (p_to$y - p_from$y)^2),
+      block = block,
+      sector = sector,
       stringsAsFactors = FALSE
     )
   }
 
-  # 1) Contorno externo
-  for (i_local in 1:n) {
-    j_local <- (i_local %% n) + 1L
+  for (local_index in seq_len(n)) {
+    next_local <- (local_index %% n) + 1L
+
     add_connection(
-      outer_ids[i_local],
-      outer_ids[j_local],
-      bloco = "contorno_externo",
-      setor = sector_from_local_index(i_local, n)
+      from = outer_ids[local_index],
+      to = outer_ids[next_local],
+      block = "outer_border",
+      sector = sector_from_local_index(local_index, n)
     )
   }
 
-  # 2) Externo -> intermediário com salto k
-  for (i_local in 1:n) {
-    j_local <- (i_local + k - 1L) %% n + 1L
+  for (local_index in seq_len(n)) {
+    target_local <- ((local_index + k - 1L) %% n) + 1L
+
     add_connection(
-      outer_ids[i_local],
-      mid_ids[j_local],
-      bloco = "externo_para_intermediario",
-      setor = sector_from_local_index(i_local, n)
+      from = outer_ids[local_index],
+      to = middle_ids[target_local],
+      block = "outer_to_middle",
+      sector = sector_from_local_index(local_index, n)
     )
   }
 
-  # 3) Intermediário -> interno com salto k
-  for (i_local in 1:n) {
-    j_local <- (i_local + k - 1L) %% n + 1L
+  for (local_index in seq_len(n)) {
+    target_local <- ((local_index + k - 1L) %% n) + 1L
+
     add_connection(
-      mid_ids[i_local],
-      inner_ids[j_local],
-      bloco = "intermediario_para_interno",
-      setor = sector_from_local_index(i_local, n)
+      from = middle_ids[local_index],
+      to = inner_ids[target_local],
+      block = "middle_to_inner",
+      sector = sector_from_local_index(local_index, n)
     )
   }
 
-  # 4) Vértices do circuito externo -> centro
-  vertex_local_idx <- seq(1L, n, by = n / 6L)
-  for (i_local in vertex_local_idx) {
+  vertex_local_indices <- seq(1L, n, by = n / 6L)
+
+  for (local_index in vertex_local_indices) {
     add_connection(
-      outer_ids[i_local],
-      center_id,
-      bloco = "vertices_para_centro",
-      setor = sector_from_local_index(i_local, n)
+      from = outer_ids[local_index],
+      to = center_id,
+      block = "vertices_to_center",
+      sector = sector_from_local_index(local_index, n)
     )
   }
 
-  conexoes <- do.call(rbind, conexoes_list)
-  rownames(conexoes) <- NULL
+  connections <- do.call(rbind, connections_list)
+  rownames(connections) <- NULL
 
-  comprimento_total <- sum(conexoes$comprimento)
+  total_length <- sum(connections$length)
 
-  # ---------------------------------------------------------------------------
-  # Gráfico
-  # ---------------------------------------------------------------------------
+  d <- gcd_int(n, k)
+
+  audit <- c(
+    "String Art audit",
+    "Figure: hexaflower",
+    sprintf("Pegs per hexagonal circuit: %d", n),
+    sprintf("Total number of pegs: %d", nrow(pegs)),
+    sprintf("Step: %d", k),
+    sprintf("Outer radius: %.4f", r),
+    sprintf("Middle scale: %.4f", scale_mid),
+    sprintf("Inner scale: %.4f", scale_inner),
+    sprintf("Middle offset: %.4f", offset_mid),
+    sprintf("Inner offset: %.4f", offset_inner),
+    sprintf("Rotation angle: %.4f radians", rotate),
+    "Rule: to_local = ((from_local + k - 1) %% n) + 1",
+    sprintf("Number of connections: %d", nrow(connections)),
+    sprintf("Number of connection blocks: %d", length(unique(connections$block))),
+    sprintf("gcd(n, k): %d", d),
+    if (d == 1L) {
+      "The local additive modular rule generates one local cycle in each circuit."
+    } else {
+      sprintf("The local additive modular rule generates %d local cycles in each circuit.", d)
+    },
+    sprintf("Total string length: %.4f", total_length)
+  )
+
   if (plot) {
-    xr <- range(pregos$x)
-    yr <- range(pregos$y)
-    mx <- 0.08 * diff(xr)
-    my <- 0.08 * diff(yr)
+    old_par <- graphics::par(no.readonly = TRUE)
+    on.exit(graphics::par(old_par), add = TRUE)
+
+    graphics::par(bg = bg)
+
+    x_range <- range(pegs$x)
+    y_range <- range(pegs$y)
+    x_margin <- 0.10 * diff(x_range)
+    y_margin <- 0.10 * diff(y_range)
+
+    if (x_margin == 0) x_margin <- 0.10
+    if (y_margin == 0) y_margin <- 0.10
 
     graphics::plot(
-      NA,
-      xlim = c(xr[1] - mx, xr[2] + mx),
-      ylim = c(yr[1] - my, yr[2] + my),
+      NA, NA,
+      xlim = c(x_range[1] - x_margin, x_range[2] + x_margin),
+      ylim = c(y_range[1] - y_margin, y_range[2] + y_margin),
       asp = 1,
-      axes = FALSE,
       xlab = "",
-      ylab = ""
+      ylab = "",
+      axes = FALSE,
+      main = main
     )
 
-    idx_border <- which(conexoes$bloco %in% c("contorno_externo", "vertices_para_centro"))
-    if (length(idx_border) > 0L) {
-      graphics::segments(
-        x0 = conexoes$x_inicial[idx_border],
-        y0 = conexoes$y_inicial[idx_border],
-        x1 = conexoes$x_final[idx_border],
-        y1 = conexoes$y_final[idx_border],
-        col = "grey30",
-        lwd = lwd
+    draw_hex_border <- function(radius) {
+      vertices <- hex_vertices(radius)
+      closed <- rbind(vertices, vertices[1, ])
+
+      graphics::lines(
+        closed$x,
+        closed$y,
+        col = border_col,
+        lwd = border_lwd
       )
     }
 
-    for (s in 1:6) {
-      idx_em <- which(
-        conexoes$bloco == "externo_para_intermediario" &
-          conexoes$setor == s
-      )
-      idx_mi <- which(
-        conexoes$bloco == "intermediario_para_interno" &
-          conexoes$setor == s
-      )
+    draw_hex_border(r)
+    draw_hex_border(r * scale_mid)
+    draw_hex_border(r * scale_inner)
 
-      if (length(idx_em) > 0L) {
+    if (show_strings) {
+      border_idx <- which(connections$block %in% c("outer_border", "vertices_to_center"))
+
+      if (length(border_idx) > 0L) {
         graphics::segments(
-          x0 = conexoes$x_inicial[idx_em],
-          y0 = conexoes$y_inicial[idx_em],
-          x1 = conexoes$x_final[idx_em],
-          y1 = conexoes$y_final[idx_em],
-          col = col[s],
+          x0 = connections$x_from[border_idx],
+          y0 = connections$y_from[border_idx],
+          x1 = connections$x_to[border_idx],
+          y1 = connections$y_to[border_idx],
+          col = border_col,
           lwd = lwd
         )
       }
 
-      if (length(idx_mi) > 0L) {
-        graphics::segments(
-          x0 = conexoes$x_inicial[idx_mi],
-          y0 = conexoes$y_inicial[idx_mi],
-          x1 = conexoes$x_final[idx_mi],
-          y1 = conexoes$y_final[idx_mi],
-          col = col[s],
-          lwd = lwd
+      for (sector in seq_len(6L)) {
+        sector_idx <- which(
+          connections$sector == sector &
+            connections$block %in% c("outer_to_middle", "middle_to_inner")
         )
+
+        if (length(sector_idx) > 0L) {
+          graphics::segments(
+            x0 = connections$x_from[sector_idx],
+            y0 = connections$y_from[sector_idx],
+            x1 = connections$x_to[sector_idx],
+            y1 = connections$y_to[sector_idx],
+            col = col[sector],
+            lwd = lwd
+          )
+        }
       }
     }
 
     if (show_points) {
       graphics::points(
-        pregos$x,
-        pregos$y,
-        pch = 16,
-        cex = cex_pregos,
-        col = col_pregos
+        pegs$x,
+        pegs$y,
+        pch = point_pch,
+        col = point_col,
+        bg = point_bg,
+        cex = point_cex
       )
     }
 
     if (show_labels) {
-      rx <- diff(range(pregos$x))
-      ry <- diff(range(pregos$y))
+      label_offset_x <- 0.012 * diff(x_range)
+      label_offset_y <- 0.012 * diff(y_range)
 
       graphics::text(
-        x = pregos$x + 0.010 * rx,
-        y = pregos$y + 0.010 * ry,
-        labels = pregos$indice,
-        cex = cex_labels,
+        x = pegs$x + label_offset_x,
+        y = pegs$y + label_offset_y,
+        labels = pegs$index,
+        cex = label_cex,
         col = label_col
       )
     }
   }
 
-  # ---------------------------------------------------------------------------
-  # Mensagens
-  # ---------------------------------------------------------------------------
   if (verbose) {
-    message(sprintf(
-      "Comprimento total do barbante: %.4f unidades.",
-      comprimento_total
-    ))
-
-    d <- gcd_int(n, k)
-    message(sprintf(
-      "Nos blocos com salto, a regra local j = (i + k - 1) %% n + 1 gera %d ciclo(s) local(is) em cada circuito (gcd(n, k) = %d).",
-      d, d
-    ))
-
-    conexoes_txt <- paste0(
-      "Prego ", conexoes$prego_inicial,
-      " -> Prego ", conexoes$prego_final
-    )
-    cat(paste(conexoes_txt, collapse = "\n"), "\n")
+    message(paste(audit, collapse = "\n"))
   }
 
-  # ---------------------------------------------------------------------------
-  # Retorno padronizado
-  # ---------------------------------------------------------------------------
-  res <- list(
-    pregos = pregos,
-    conexoes = conexoes,
-    comprimento_total = comprimento_total,
+  result <- list(
+    pegs = pegs,
+    connections = connections,
+    total_length = total_length,
+    audit = audit,
     meta = list(
-      figura = "hexaflower",
-      regra = paste(
-        "Blocos: contorno externo;",
-        "j = (i + k - 1) %% n + 1 no externo->intermediario;",
-        "j = (i + k - 1) %% n + 1 no intermediario->interno;",
-        "vertices externos -> centro."
-      ),
-      parametros = list(
+      figure = "hexaflower",
+      family = "hexagonal",
+      rule = "layered_additive_modular",
+      formula = "to_local = ((from_local + k - 1) %% n) + 1",
+      parameters = list(
         n = n,
         k = k,
         r = r,
@@ -509,14 +538,18 @@ sthexaflower <- function(
         scale_inner = scale_inner,
         offset_mid = offset_mid,
         offset_inner = offset_inner,
+        rotate = rotate,
         col = col,
-        lwd = lwd
-      ),
-      pacote = "stringArt"
+        lwd = lwd,
+        show_points = show_points,
+        show_labels = show_labels,
+        show_strings = show_strings,
+        template = template
+      )
     )
   )
 
-  class(res) <- c("stringart_result", class(res))
+  class(result) <- c("stringart_result", class(result))
 
-  invisible(res)
+  invisible(result)
 }

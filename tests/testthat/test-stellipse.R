@@ -1,14 +1,14 @@
-test_that("stcircle runs without mandatory arguments", {
+test_that("stellipse runs without mandatory arguments", {
   expect_error(
-    res <- stcircle(plot = FALSE),
+    res <- stellipse(plot = FALSE),
     NA
   )
 
   expect_type(res, "list")
 })
 
-test_that("stcircle returns a standardized object", {
-  res <- stcircle(n = 10, k = 2, plot = FALSE)
+test_that("stellipse returns a standardized object", {
+  res <- stellipse(n = 10, k = 2, plot = FALSE)
 
   expect_type(res, "list")
 
@@ -21,8 +21,8 @@ test_that("stcircle returns a standardized object", {
   ) %in% names(res)))
 })
 
-test_that("stcircle returns a valid pegs table", {
-  res <- stcircle(n = 10, k = 2, plot = FALSE)
+test_that("stellipse returns a valid pegs table", {
+  res <- stellipse(n = 10, k = 2, plot = FALSE)
 
   expect_true(is.data.frame(res$pegs))
   expect_equal(nrow(res$pegs), 10)
@@ -34,8 +34,8 @@ test_that("stcircle returns a valid pegs table", {
   ) %in% names(res$pegs)))
 })
 
-test_that("stcircle returns a valid connections table", {
-  res <- stcircle(n = 10, k = 2, plot = FALSE)
+test_that("stellipse returns a valid connections table", {
+  res <- stellipse(n = 10, k = 2, plot = FALSE)
 
   expect_true(is.data.frame(res$connections))
   expect_equal(nrow(res$connections), 10)
@@ -56,8 +56,8 @@ test_that("stcircle returns a valid connections table", {
   expect_true(res$total_length > 0)
 })
 
-test_that("stcircle does not return Portuguese aliases", {
-  res <- stcircle(n = 10, k = 2, plot = FALSE)
+test_that("stellipse does not return Portuguese aliases", {
+  res <- stellipse(n = 10, k = 2, plot = FALSE)
 
   expect_false("pregos" %in% names(res))
   expect_false("conexoes" %in% names(res))

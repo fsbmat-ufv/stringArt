@@ -1,11 +1,11 @@
-#' Generate a triangular string art pattern
+#' Generate string art on a regular polygon
 #'
-#' `sttriangle()` generates a string art pattern on the boundary of an
-#' equilateral triangle. Pegs are distributed uniformly along the triangle
-#' perimeter and connected using an additive modular rule.
+#' `stpolygon()` generates a string art figure on the boundary of a regular
+#' polygon. Pegs are distributed uniformly along the polygon perimeter and
+#' connected using an additive modular rule.
 #'
-#' @param n Integer. Number of pegs placed along the triangle boundary. Must be
-#'   at least 3.
+#' @param n Integer. Number of pegs placed along the polygon boundary. Must be
+#'   at least 3 and at least `sides`.
 #' @param k Integer. Additive modular step used in the connection rule. Must
 #'   satisfy `1 <= k <= n - 1`.
 #' @param col String color passed to [graphics::segments()].
@@ -14,8 +14,9 @@
 #' @param show_points Logical. If `TRUE`, draws the pegs.
 #' @param show_labels Logical. If `TRUE`, draws peg labels.
 #' @param verbose Logical. If `TRUE`, prints a short audit to the console.
-#' @param side Positive number. Side length of the equilateral triangle.
-#' @param rotate Numeric. Rotation angle in radians applied to the whole figure.
+#' @param sides Integer. Number of polygon sides. Must be at least 3.
+#' @param radius Positive number. Circumradius of the polygon.
+#' @param rotate Numeric. Rotation angle in radians applied to the polygon.
 #' @param show_strings Logical. If `TRUE`, draws the string connections.
 #' @param template Logical. If `TRUE`, draws only the peg template, without
 #'   string connections. This is equivalent to setting `show_strings = FALSE`
@@ -26,74 +27,81 @@
 #' @param point_bg Peg background color when applicable.
 #' @param label_cex Positive number. Label size.
 #' @param label_col Label color.
-#' @param border_col Triangle border color.
-#' @param border_lwd Positive number. Triangle border line width.
+#' @param border_col Polygon border color.
+#' @param border_lwd Positive number. Polygon border line width.
 #' @param bg Plot background color.
 #' @param main Optional plot title. If `NULL`, no title is displayed.
 #'
 #' @details
-#' The triangle is centered at the origin using its centroid. The pegs are
-#' placed uniformly along the perimeter in counterclockwise order.
-#'
-#' The additive modular connection rule is:
+#' The polygon is inscribed in a circle of radius `radius`. Pegs are distributed
+#' uniformly along the full boundary, not only at the vertices. The additive
+#' modular connection rule is:
 #'
 #' `to = ((from + k - 1) %% n) + 1`.
 #'
-#' When `gcd(n, k) = 1`, the modular rule forms a single cycle through all
-#' pegs. When `gcd(n, k) > 1`, the construction decomposes into independent
-#' cycles.
+#' This construction supports the exploration of regular polygons, central and
+#' interior angles, symmetry, congruence, divisibility, and modular arithmetic.
 #'
 #' @return Invisibly returns a list of class `stringart_result` with:
 #' \describe{
-#'   \item{pegs}{A `data.frame` with columns `index`, `x`, and `y`.}
+#'   \item{pegs}{A `data.frame` with columns `index`, `x`, `y`, `side`,
+#'   and `local_index`.}
 #'   \item{connections}{A `data.frame` with columns `connection_index`,
 #'   `from`, `to`, `x_from`, `y_from`, `x_to`, `y_to`, and `length`.}
 #'   \item{total_length}{Total string length.}
 #'   \item{audit}{A character vector with audit information.}
-#'   \item{meta}{A list with construction metadata, including the triangle
-#'   vertices.}
+#'   \item{meta}{A list with construction metadata.}
 #' }
 #'
 #' @examples
-#' sttriangle()
-#'
-#' res <- sttriangle(plot = FALSE)
-#' head(res$pegs)
-#' head(res$connections)
-#' res$total_length
-#'
-#' sttriangle(n = 30, k = 7, side = 2, col = "blue", lwd = 1)
-#' sttriangle(n = 18, k = 5, show_points = TRUE, show_labels = TRUE)
-#' sttriangle(template = TRUE)
+#' stpolygon()
+#' stpolygon(sides = 5)
+#' stpolygon(sides = 6)
+#' stpolygon(sides = 8)
+#' stpolygon(n = 60, k = 7, sides = 5)
+#' stpolygon(template = TRUE)
 #'
 #' @importFrom graphics par plot segments points text
 #' @export
-sttriangle <- function(n = 30,
-                       k = 7,
-                       col = "blue",
-                       lwd = 1,
-                       plot = TRUE,
-                       show_points = TRUE,
-                       show_labels = FALSE,
-                       verbose = FALSE,
-                       side = 2,
-                       rotate = 0,
-                       show_strings = TRUE,
-                       template = FALSE,
-                       point_col = "black",
-                       point_cex = 0.8,
-                       point_pch = 19,
-                       point_bg = "white",
-                       label_cex = 0.7,
-                       label_col = "black",
-                       border_col = "grey50",
-                       border_lwd = 1,
-                       bg = "white",
-                       main = NULL) {
+stpolygon <- function(n = 60,
+                      k = 7,
+                      col = "blue",
+                      lwd = 1,
+                      plot = TRUE,
+                      show_points = TRUE,
+                      show_labels = FALSE,
+                      verbose = FALSE,
+                      sides = 5,
+                      radius = 1,
+                      rotate = pi / 2,
+                      show_strings = TRUE,
+                      template = FALSE,
+                      point_col = "black",
+                      point_cex = 0.8,
+                      point_pch = 19,
+                      point_bg = "white",
+                      label_cex = 0.7,
+                      label_col = "black",
+                      border_col = "grey50",
+                      border_lwd = 1,
+                      bg = "white",
+                      main = NULL) {
 
   if (!is.numeric(n) || length(n) != 1L || is.na(n) ||
       n != as.integer(n) || n < 3L) {
     stop("`n` must be a single integer greater than or equal to 3.", call. = FALSE)
+  }
+
+  if (!is.numeric(sides) || length(sides) != 1L || is.na(sides) ||
+      sides != as.integer(sides) || sides < 3L) {
+    stop("`sides` must be a single integer greater than or equal to 3.", call. = FALSE)
+  }
+
+  n <- as.integer(n)
+  sides <- as.integer(sides)
+
+  if (n < sides) {
+    stop("`n` must be greater than or equal to `sides`.", call. = FALSE)
   }
 
   if (!is.numeric(k) || length(k) != 1L || is.na(k) ||
@@ -101,38 +109,29 @@ sttriangle <- function(n = 30,
     stop("`k` must be a single positive integer.", call. = FALSE)
   }
 
-  n <- as.integer(n)
   k <- as.integer(k)
 
   if (k >= n) {
     stop("`k` must satisfy 1 <= k <= n - 1.", call. = FALSE)
   }
 
-  if (!is.numeric(side) || length(side) != 1L || is.na(side) || side <= 0) {
-    stop("`side` must be a single positive number.", call. = FALSE)
+  positive_args <- list(
+    radius = radius,
+    lwd = lwd,
+    point_cex = point_cex,
+    label_cex = label_cex,
+    border_lwd = border_lwd
+  )
+
+  for (nm in names(positive_args)) {
+    value <- positive_args[[nm]]
+    if (!is.numeric(value) || length(value) != 1L || is.na(value) || value <= 0) {
+      stop(sprintf("`%s` must be a single positive number.", nm), call. = FALSE)
+    }
   }
 
   if (!is.numeric(rotate) || length(rotate) != 1L || is.na(rotate)) {
     stop("`rotate` must be a single numeric value.", call. = FALSE)
-  }
-
-  if (!is.numeric(lwd) || length(lwd) != 1L || is.na(lwd) || lwd <= 0) {
-    stop("`lwd` must be a single positive number.", call. = FALSE)
-  }
-
-  if (!is.numeric(border_lwd) || length(border_lwd) != 1L ||
-      is.na(border_lwd) || border_lwd <= 0) {
-    stop("`border_lwd` must be a single positive number.", call. = FALSE)
-  }
-
-  if (!is.numeric(point_cex) || length(point_cex) != 1L ||
-      is.na(point_cex) || point_cex <= 0) {
-    stop("`point_cex` must be a single positive number.", call. = FALSE)
-  }
-
-  if (!is.numeric(label_cex) || length(label_cex) != 1L ||
-      is.na(label_cex) || label_cex <= 0) {
-    stop("`label_cex` must be a single positive number.", call. = FALSE)
   }
 
   logical_args <- list(
@@ -144,10 +143,10 @@ sttriangle <- function(n = 30,
     template = template
   )
 
-  for (arg_name in names(logical_args)) {
-    value <- logical_args[[arg_name]]
+  for (nm in names(logical_args)) {
+    value <- logical_args[[nm]]
     if (!is.logical(value) || length(value) != 1L || is.na(value)) {
-      stop(sprintf("`%s` must be TRUE or FALSE.", arg_name), call. = FALSE)
+      stop(sprintf("`%s` must be TRUE or FALSE.", nm), call. = FALSE)
     }
   }
 
@@ -159,76 +158,56 @@ sttriangle <- function(n = 30,
   gcd_int <- function(a, b) {
     a <- abs(as.integer(a))
     b <- abs(as.integer(b))
-
     while (b != 0L) {
       tmp <- b
       b <- a %% b
       a <- tmp
     }
-
     a
   }
 
-  rotate_points <- function(x, y, angle) {
-    data.frame(
-      x = x * cos(angle) - y * sin(angle),
-      y = x * sin(angle) + y * cos(angle)
-    )
+  resample_closed_polyline <- function(vertices, n_points) {
+    x <- c(vertices$x, vertices$x[1])
+    y <- c(vertices$y, vertices$y[1])
+
+    dx <- diff(x)
+    dy <- diff(y)
+    seg_len <- sqrt(dx^2 + dy^2)
+    cumulative <- c(0, cumsum(seg_len))
+    total_len <- sum(seg_len)
+
+    s_target <- seq(0, total_len, length.out = n_points + 1L)[-(n_points + 1L)]
+    px <- numeric(n_points)
+    py <- numeric(n_points)
+    side_id <- integer(n_points)
+
+    for (i in seq_len(n_points)) {
+      s <- s_target[i]
+      j <- min(findInterval(s, cumulative, rightmost.closed = TRUE), length(seg_len))
+      t <- (s - cumulative[j]) / seg_len[j]
+      px[i] <- (1 - t) * x[j] + t * x[j + 1L]
+      py[i] <- (1 - t) * y[j] + t * y[j + 1L]
+      side_id[i] <- j
+    }
+
+    data.frame(x = px, y = py, side = side_id)
   }
 
-  interpolate_segment <- function(p, q, t) {
-    c(
-      (1 - t) * p[1] + t * q[1],
-      (1 - t) * p[2] + t * q[2]
-    )
-  }
-
-  h <- sqrt(3) / 2 * side
-
+  angles <- rotate + seq(0, 2 * pi, length.out = sides + 1L)[-(sides + 1L)]
   vertices <- data.frame(
-    vertex = c("A", "B", "C"),
-    x = c(-side / 2, side / 2, 0),
-    y = c(-h / 3, -h / 3, 2 * h / 3)
+    vertex = seq_len(sides),
+    x = radius * cos(angles),
+    y = radius * sin(angles)
   )
 
-  if (rotate != 0) {
-    rotated_vertices <- rotate_points(vertices$x, vertices$y, rotate)
-    vertices$x <- rotated_vertices$x
-    vertices$y <- rotated_vertices$y
-  }
-
-  a_vertex <- c(vertices$x[1], vertices$y[1])
-  b_vertex <- c(vertices$x[2], vertices$y[2])
-  c_vertex <- c(vertices$x[3], vertices$y[3])
-
-  side_1 <- sqrt(sum((b_vertex - a_vertex)^2))
-  side_2 <- sqrt(sum((c_vertex - b_vertex)^2))
-  side_3 <- sqrt(sum((a_vertex - c_vertex)^2))
-
-  perimeter <- side_1 + side_2 + side_3
-  target_s <- seq(0, perimeter, length.out = n + 1L)[-(n + 1L)]
-
-  peg_coordinates <- matrix(0, nrow = n, ncol = 2)
-
-  for (idx in seq_along(target_s)) {
-    s <- target_s[idx]
-
-    if (s < side_1) {
-      t <- s / side_1
-      peg_coordinates[idx, ] <- interpolate_segment(a_vertex, b_vertex, t)
-    } else if (s < side_1 + side_2) {
-      t <- (s - side_1) / side_2
-      peg_coordinates[idx, ] <- interpolate_segment(b_vertex, c_vertex, t)
-    } else {
-      t <- (s - side_1 - side_2) / side_3
-      peg_coordinates[idx, ] <- interpolate_segment(c_vertex, a_vertex, t)
-    }
-  }
+  sampled <- resample_closed_polyline(vertices, n)
 
   pegs <- data.frame(
     index = seq_len(n),
-    x = peg_coordinates[, 1],
-    y = peg_coordinates[, 2]
+    x = sampled$x,
+    y = sampled$y,
+    side = sampled$side,
+    local_index = seq_len(n)
   )
 
   from <- seq_len(n)
@@ -252,15 +231,18 @@ sttriangle <- function(n = 30,
   total_length <- sum(connections$length)
 
   d <- gcd_int(n, k)
+  central_angle <- 2 * pi / sides
+  interior_angle <- (sides - 2) * pi / sides
 
   audit <- c(
     "String Art audit",
-    "Figure: triangle",
+    "Figure: polygon",
+    sprintf("Number of sides: %d", sides),
     sprintf("Number of pegs: %d", n),
     sprintf("Modular step: %d", k),
-    sprintf("Side length: %.4f", side),
-    sprintf("Rotation angle: %.4f radians", rotate),
-    "Rule: to = ((from + k - 1) %% n) + 1",
+    sprintf("Circumradius: %.4f", radius),
+    sprintf("Central angle: %.4f radians", central_angle),
+    sprintf("Interior angle: %.4f radians", interior_angle),
     sprintf("Number of connections: %d", nrow(connections)),
     sprintf("gcd(n, k): %d", d),
     if (d == 1L) {
@@ -274,22 +256,12 @@ sttriangle <- function(n = 30,
   if (plot) {
     old_par <- graphics::par(no.readonly = TRUE)
     on.exit(graphics::par(old_par), add = TRUE)
-
     graphics::par(bg = bg)
 
-    x_range <- range(vertices$x)
-    y_range <- range(vertices$y)
-
-    x_pad <- 0.10 * diff(x_range)
-    y_pad <- 0.10 * diff(y_range)
-
-    if (x_pad == 0) {
-      x_pad <- 0.1
-    }
-
-    if (y_pad == 0) {
-      y_pad <- 0.1
-    }
+    x_range <- range(c(vertices$x, pegs$x))
+    y_range <- range(c(vertices$y, pegs$y))
+    x_pad <- max(0.1, 0.1 * diff(x_range))
+    y_pad <- max(0.1, 0.1 * diff(y_range))
 
     graphics::plot(
       NA, NA,
@@ -305,8 +277,8 @@ sttriangle <- function(n = 30,
     graphics::segments(
       x0 = vertices$x,
       y0 = vertices$y,
-      x1 = c(vertices$x[2:3], vertices$x[1]),
-      y1 = c(vertices$y[2:3], vertices$y[1]),
+      x1 = c(vertices$x[-1], vertices$x[1]),
+      y1 = c(vertices$y[-1], vertices$y[1]),
       col = border_col,
       lwd = border_lwd
     )
@@ -355,15 +327,24 @@ sttriangle <- function(n = 30,
     total_length = total_length,
     audit = audit,
     meta = list(
-      figure = "triangle",
-      family = "polygon",
+      figure = "polygon",
+      family = "regular_polygon",
       rule = "additive_modular",
       formula = "to = ((from + k - 1) %% n) + 1",
-      vertices = vertices,
+      mathematical_topics = c(
+        "regular polygons",
+        "symmetry",
+        "central angle",
+        "interior angle",
+        "congruence",
+        "divisibility",
+        "modular arithmetic"
+      ),
       parameters = list(
         n = n,
         k = k,
-        side = side,
+        sides = sides,
+        radius = radius,
         rotate = rotate,
         col = col,
         lwd = lwd,
@@ -376,6 +357,5 @@ sttriangle <- function(n = 30,
   )
 
   class(result) <- c("stringart_result", class(result))
-
   invisible(result)
 }

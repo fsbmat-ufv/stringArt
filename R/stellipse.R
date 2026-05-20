@@ -1,303 +1,356 @@
-#' Gera uma figura de String Art em formato elíptico
+#' Generate an elliptical string art pattern
 #'
-#' A função `stellipse()` constrói uma figura de *String Art* sobre uma elipse,
-#' posicionando `n` pregos ao longo do contorno elíptico e conectando cada prego
-#' ao prego `k` posições à frente, segundo uma regra modular fixa.
+#' `stellipse()` generates a string art pattern by placing equally spaced pegs
+#' along an ellipse and connecting each peg to another peg according to an
+#' additive modular rule.
 #'
-#' A elipse é centrada na origem e descrita parametricamente por
-#' `x = a*cos(theta)` e `y = b*sin(theta)`, com os pregos numerados de `1` a `n`
-#' no sentido anti-horário, a partir do ponto `(a, 0)`.
-#'
-#' @param n Inteiro maior ou igual a 3. Número de pregos.
-#' @param k Inteiro entre 1 e `n - 1`. Salto modular da conexão.
-#' @param a Número positivo. Semi-eixo horizontal da elipse.
-#' @param b Número positivo. Semi-eixo vertical da elipse.
-#' @param ... Argumentos adicionais não utilizados diretamente, mantidos para
-#'   compatibilidade com o contrato padronizado do pacote.
-#' @param col Cor das conexões.
-#' @param lwd Número positivo. Espessura das conexões.
-#' @param plot Lógico. Se `TRUE`, desenha a figura.
-#' @param show_points Lógico. Se `TRUE`, mostra os pregos.
-#' @param cex_pregos Número positivo. Tamanho dos pregos.
-#' @param col_pregos Cor dos pregos.
-#' @param show_labels Lógico. Se `TRUE`, mostra os rótulos dos pregos.
-#' @param cex_labels Número positivo. Tamanho dos rótulos.
-#' @param label_col Cor dos rótulos.
-#' @param verbose Lógico. Se `TRUE`, exibe mensagens informativas.
+#' @param n Integer. Number of pegs placed on the ellipse. Must be at least 3.
+#' @param k Integer. Step used in the modular connection rule. Must satisfy
+#'   `1 <= k <= n - 1`.
+#' @param col String color passed to [graphics::segments()].
+#' @param lwd Positive number. Line width used to draw the strings.
+#' @param plot Logical. If `TRUE`, draws the figure.
+#' @param show_points Logical. If `TRUE`, draws the pegs.
+#' @param show_labels Logical. If `TRUE`, draws peg labels.
+#' @param verbose Logical. If `TRUE`, prints a short audit to the console.
+#' @param a Positive number. Semi-major horizontal axis of the ellipse.
+#' @param b Positive number. Semi-minor vertical axis of the ellipse.
+#' @param rotate Numeric. Rotation angle in radians applied to the whole figure.
+#' @param show_strings Logical. If `TRUE`, draws the string connections.
+#' @param template Logical. If `TRUE`, draws only the peg template, without
+#'   string connections. This is equivalent to setting `show_strings = FALSE`
+#'   and `show_points = TRUE`.
+#' @param point_col Peg color.
+#' @param point_cex Positive number. Peg size.
+#' @param point_pch Plotting symbol used for pegs.
+#' @param point_bg Peg background color when applicable.
+#' @param label_cex Positive number. Label size.
+#' @param label_col Label color.
+#' @param border_col Ellipse border color.
+#' @param border_lwd Positive number. Ellipse border line width.
+#' @param bg Plot background color.
+#' @param main Optional plot title. If `NULL`, no title is displayed.
 #'
 #' @details
-#' Os pregos são distribuídos segundo uma parametrização angular da elipse,
-#' com ângulos igualmente espaçados em `[0, 2*pi)`. A ordem dos pregos é
-#' explícita, geométrica, auditável e reproduzível.
+#' The pegs are placed along the parametric ellipse
+#' `x = a * cos(theta)` and `y = b * sin(theta)`, centered at the origin.
+#' Pegs are indexed from `1` to `n` in counterclockwise order, starting at
+#' `(a, 0)`, after applying the optional rotation angle `rotate`.
 #'
-#' A regra de ligação utilizada é:
-#' `j <- (i + k - 1) %% n + 1`.
+#' The additive modular connection rule is:
 #'
-#' Quando `gcd(n, k) = 1`, a construção percorre todos os pregos em um único
-#' ciclo. Quando `gcd(n, k) > 1`, a figura se decompõe em ciclos independentes.
+#' `to = ((from + k - 1) %% n) + 1`.
 #'
-#' @return Invisivelmente, uma lista com:
+#' When `gcd(n, k) = 1`, this rule generates a single cycle passing through all
+#' pegs. When `gcd(n, k) > 1`, the figure decomposes into independent cycles.
+#'
+#' @return Invisibly returns a list of class `stringart_result` with:
 #' \describe{
-#'   \item{pregos}{`data.frame` com colunas `indice`, `x` e `y`.}
-#'   \item{conexoes}{`data.frame` com colunas canônicas
-#'   `indice_conexao`, `prego_inicial`, `prego_final`, `x_inicial`,
-#'   `y_inicial`, `x_final`, `y_final`, `comprimento`, além dos aliases
-#'   `i`, `j`, `x1`, `y1`, `x2`, `y2`.}
-#'   \item{comprimento_total}{Comprimento total do barbante.}
-#'   \item{meta}{Metadados da construção.}
+#'   \item{pegs}{A `data.frame` with columns `index`, `x`, and `y`.}
+#'   \item{connections}{A `data.frame` with columns `connection_index`,
+#'   `from`, `to`, `x_from`, `y_from`, `x_to`, `y_to`, and `length`.}
+#'   \item{total_length}{Total string length.}
+#'   \item{audit}{A character vector with audit information.}
+#'   \item{meta}{A list with construction metadata.}
 #' }
 #'
 #' @examples
-#' # Exemplo básico
-#' stellipse(n = 30, k = 3, a = 4, b = 2, col = "purple", lwd = 1.2)
+#' stellipse()
 #'
-#' # Exemplo com pregos e rótulos
-#' stellipse(
-#'   n = 20, k = 4, a = 3, b = 1.8,
-#'   col = "steelblue", lwd = 1,
-#'   show_points = TRUE,
-#'   show_labels = TRUE
-#' )
+#' res <- stellipse(plot = FALSE)
+#' head(res$pegs)
+#' head(res$connections)
+#' res$total_length
 #'
-#' # Exemplo sem gráfico
-#' res <- stellipse(
-#'   n = 24, k = 5, a = 3, b = 1.5,
-#'   plot = FALSE, verbose = FALSE
-#' )
-#' res$comprimento_total
-#' head(res$pregos)
-#' head(res$conexoes)
+#' stellipse(n = 40, k = 7, a = 2.5, b = 1.2, col = "purple", lwd = 1)
+#' stellipse(n = 24, k = 5, show_points = TRUE, show_labels = TRUE)
+#' stellipse(template = TRUE)
 #'
-#' @importFrom graphics plot lines points segments text
+#' @importFrom graphics par plot lines segments points text
 #' @export
-stellipse <- function(
-    n,
-    k,
-    a,
-    b,
-    ...,
-    col = "blue",
-    lwd = 1,
-    plot = TRUE,
-    show_points = FALSE,
-    cex_pregos = 0.8,
-    col_pregos = "black",
-    show_labels = FALSE,
-    cex_labels = 0.7,
-    label_col = "black",
-    verbose = TRUE
-) {
+stellipse <- function(n = 30,
+                      k = 5,
+                      col = "blue",
+                      lwd = 1,
+                      plot = TRUE,
+                      show_points = TRUE,
+                      show_labels = FALSE,
+                      verbose = FALSE,
+                      a = 2,
+                      b = 1,
+                      rotate = 0,
+                      show_strings = TRUE,
+                      template = FALSE,
+                      point_col = "black",
+                      point_cex = 0.8,
+                      point_pch = 19,
+                      point_bg = "white",
+                      label_cex = 0.7,
+                      label_col = "black",
+                      border_col = "grey50",
+                      border_lwd = 1,
+                      bg = "white",
+                      main = NULL) {
 
-  # ---------------------------------------------------------------------------
-  # Validações
-  # ---------------------------------------------------------------------------
   if (!is.numeric(n) || length(n) != 1L || is.na(n) ||
       n != as.integer(n) || n < 3L) {
-    stop("`n` must be a single integer greater than or equal to 3.")
+    stop("`n` must be a single integer greater than or equal to 3.", call. = FALSE)
   }
 
   if (!is.numeric(k) || length(k) != 1L || is.na(k) ||
       k != as.integer(k) || k < 1L) {
-    stop("`k` must be a single positive integer.")
-  }
-
-  if (!is.numeric(a) || length(a) != 1L || is.na(a) || a <= 0) {
-    stop("`a` must be a single positive number.")
-  }
-
-  if (!is.numeric(b) || length(b) != 1L || is.na(b) || b <= 0) {
-    stop("`b` must be a single positive number.")
-  }
-
-  if (!is.numeric(lwd) || length(lwd) != 1L || is.na(lwd) || lwd <= 0) {
-    stop("`lwd` must be a single positive number.")
-  }
-
-  if (!is.logical(plot) || length(plot) != 1L || is.na(plot)) {
-    stop("`plot` must be TRUE or FALSE.")
-  }
-
-  if (!is.logical(show_points) || length(show_points) != 1L || is.na(show_points)) {
-    stop("`show_points` must be TRUE or FALSE.")
-  }
-
-  if (!is.logical(show_labels) || length(show_labels) != 1L || is.na(show_labels)) {
-    stop("`show_labels` must be TRUE or FALSE.")
-  }
-
-  if (!is.logical(verbose) || length(verbose) != 1L || is.na(verbose)) {
-    stop("`verbose` must be TRUE or FALSE.")
-  }
-
-  if (!is.numeric(cex_pregos) || length(cex_pregos) != 1L ||
-      is.na(cex_pregos) || cex_pregos <= 0) {
-    stop("`cex_pregos` must be a single positive number.")
-  }
-
-  if (!is.numeric(cex_labels) || length(cex_labels) != 1L ||
-      is.na(cex_labels) || cex_labels <= 0) {
-    stop("`cex_labels` must be a single positive number.")
+    stop("`k` must be a single positive integer.", call. = FALSE)
   }
 
   n <- as.integer(n)
   k <- as.integer(k)
 
   if (k >= n) {
-    stop("`k` must satisfy 1 <= k <= n - 1.")
+    stop("`k` must satisfy 1 <= k <= n - 1.", call. = FALSE)
   }
 
-  # ---------------------------------------------------------------------------
-  # Função auxiliar
-  # ---------------------------------------------------------------------------
+  if (!is.numeric(a) || length(a) != 1L || is.na(a) || a <= 0) {
+    stop("`a` must be a single positive number.", call. = FALSE)
+  }
+
+  if (!is.numeric(b) || length(b) != 1L || is.na(b) || b <= 0) {
+    stop("`b` must be a single positive number.", call. = FALSE)
+  }
+
+  if (!is.numeric(lwd) || length(lwd) != 1L || is.na(lwd) || lwd <= 0) {
+    stop("`lwd` must be a single positive number.", call. = FALSE)
+  }
+
+  if (!is.numeric(border_lwd) || length(border_lwd) != 1L ||
+      is.na(border_lwd) || border_lwd <= 0) {
+    stop("`border_lwd` must be a single positive number.", call. = FALSE)
+  }
+
+  if (!is.numeric(rotate) || length(rotate) != 1L || is.na(rotate)) {
+    stop("`rotate` must be a single numeric value.", call. = FALSE)
+  }
+
+  if (!is.logical(plot) || length(plot) != 1L || is.na(plot)) {
+    stop("`plot` must be TRUE or FALSE.", call. = FALSE)
+  }
+
+  if (!is.logical(show_points) || length(show_points) != 1L || is.na(show_points)) {
+    stop("`show_points` must be TRUE or FALSE.", call. = FALSE)
+  }
+
+  if (!is.logical(show_labels) || length(show_labels) != 1L || is.na(show_labels)) {
+    stop("`show_labels` must be TRUE or FALSE.", call. = FALSE)
+  }
+
+  if (!is.logical(verbose) || length(verbose) != 1L || is.na(verbose)) {
+    stop("`verbose` must be TRUE or FALSE.", call. = FALSE)
+  }
+
+  if (!is.logical(show_strings) || length(show_strings) != 1L || is.na(show_strings)) {
+    stop("`show_strings` must be TRUE or FALSE.", call. = FALSE)
+  }
+
+  if (!is.logical(template) || length(template) != 1L || is.na(template)) {
+    stop("`template` must be TRUE or FALSE.", call. = FALSE)
+  }
+
+  if (!is.numeric(point_cex) || length(point_cex) != 1L ||
+      is.na(point_cex) || point_cex <= 0) {
+    stop("`point_cex` must be a single positive number.", call. = FALSE)
+  }
+
+  if (!is.numeric(label_cex) || length(label_cex) != 1L ||
+      is.na(label_cex) || label_cex <= 0) {
+    stop("`label_cex` must be a single positive number.", call. = FALSE)
+  }
+
+  if (template) {
+    show_strings <- FALSE
+    show_points <- TRUE
+  }
+
   gcd_int <- function(x, y) {
     x <- abs(as.integer(x))
     y <- abs(as.integer(y))
+
     while (y != 0L) {
       tmp <- y
       y <- x %% y
       x <- tmp
     }
+
     x
   }
 
-  # ---------------------------------------------------------------------------
-  # Pregos: parametrização da elipse
-  # ---------------------------------------------------------------------------
+  rotate_points <- function(x, y, angle) {
+    data.frame(
+      x = x * cos(angle) - y * sin(angle),
+      y = x * sin(angle) + y * cos(angle)
+    )
+  }
+
   theta <- seq(0, 2 * pi, length.out = n + 1L)[-(n + 1L)]
 
-  pregos <- data.frame(
-    indice = seq_len(n),
+  xy <- rotate_points(
     x = a * cos(theta),
-    y = b * sin(theta)
+    y = b * sin(theta),
+    angle = rotate
   )
 
-  # ---------------------------------------------------------------------------
-  # Conexões
-  # ---------------------------------------------------------------------------
-  indice_conexao <- seq_len(n)
-  prego_inicial <- seq_len(n)
-  prego_final <- ((prego_inicial + k - 1L) %% n) + 1L
-
-  x_inicial <- pregos$x[prego_inicial]
-  y_inicial <- pregos$y[prego_inicial]
-  x_final   <- pregos$x[prego_final]
-  y_final   <- pregos$y[prego_final]
-
-  comprimento <- sqrt((x_final - x_inicial)^2 + (y_final - y_inicial)^2)
-
-  conexoes <- data.frame(
-    indice_conexao = indice_conexao,
-    prego_inicial = prego_inicial,
-    prego_final = prego_final,
-    x_inicial = x_inicial,
-    y_inicial = y_inicial,
-    x_final = x_final,
-    y_final = y_final,
-    comprimento = comprimento,
-    i = prego_inicial,
-    j = prego_final,
-    x1 = x_inicial,
-    y1 = y_inicial,
-    x2 = x_final,
-    y2 = y_final
+  pegs <- data.frame(
+    index = seq_len(n),
+    x = xy$x,
+    y = xy$y
   )
 
-  comprimento_total <- sum(conexoes$comprimento)
+  from <- seq_len(n)
+  to <- ((from + k - 1L) %% n) + 1L
 
-  # ---------------------------------------------------------------------------
-  # Gráfico
-  # ---------------------------------------------------------------------------
+  connections <- data.frame(
+    connection_index = seq_len(n),
+    from = from,
+    to = to,
+    x_from = pegs$x[from],
+    y_from = pegs$y[from],
+    x_to = pegs$x[to],
+    y_to = pegs$y[to]
+  )
+
+  connections$length <- sqrt(
+    (connections$x_to - connections$x_from)^2 +
+      (connections$y_to - connections$y_from)^2
+  )
+
+  total_length <- sum(connections$length)
+
+  d <- gcd_int(n, k)
+
+  audit <- c(
+    "String Art audit",
+    "Figure: ellipse",
+    sprintf("Number of pegs: %d", n),
+    sprintf("Step: %d", k),
+    sprintf("Horizontal semi-axis: %.4f", a),
+    sprintf("Vertical semi-axis: %.4f", b),
+    sprintf("Rotation angle: %.4f radians", rotate),
+    "Rule: to = ((from + k - 1) %% n) + 1",
+    sprintf("Number of connections: %d", nrow(connections)),
+    sprintf("gcd(n, k): %d", d),
+    if (d == 1L) {
+      "The additive modular rule generates a single cycle through all pegs."
+    } else {
+      sprintf("The additive modular rule generates %d independent cycles.", d)
+    },
+    sprintf("Total string length: %.4f", total_length)
+  )
+
   if (plot) {
-    margem_x <- 0.15 * a
-    margem_y <- 0.15 * b
+    old_par <- graphics::par(no.readonly = TRUE)
+    on.exit(graphics::par(old_par), add = TRUE)
+
+    graphics::par(bg = bg)
+
+    margin_x <- 0.15 * max(a, b)
+    margin_y <- 0.15 * max(a, b)
+
+    x_limits <- range(pegs$x) + c(-margin_x, margin_x)
+    y_limits <- range(pegs$y) + c(-margin_y, margin_y)
 
     graphics::plot(
       NA, NA,
-      xlim = c(-a - margem_x, a + margem_x),
-      ylim = c(-b - margem_y, b + margem_y),
+      xlim = x_limits,
+      ylim = y_limits,
       asp = 1,
       xlab = "",
       ylab = "",
-      axes = FALSE
+      axes = FALSE,
+      main = main
     )
 
     tt <- seq(0, 2 * pi, length.out = 500L)
-    graphics::lines(a * cos(tt), b * sin(tt), col = "grey80", lty = 3)
-
-    graphics::segments(
-      x0 = conexoes$x_inicial,
-      y0 = conexoes$y_inicial,
-      x1 = conexoes$x_final,
-      y1 = conexoes$y_final,
-      col = col,
-      lwd = lwd
+    ellipse_border <- rotate_points(
+      x = a * cos(tt),
+      y = b * sin(tt),
+      angle = rotate
     )
+
+    graphics::lines(
+      ellipse_border$x,
+      ellipse_border$y,
+      col = border_col,
+      lwd = border_lwd
+    )
+
+    if (show_strings) {
+      graphics::segments(
+        x0 = connections$x_from,
+        y0 = connections$y_from,
+        x1 = connections$x_to,
+        y1 = connections$y_to,
+        col = col,
+        lwd = lwd
+      )
+    }
 
     if (show_points) {
       graphics::points(
-        pregos$x, pregos$y,
-        pch = 19,
-        cex = cex_pregos,
-        col = col_pregos
+        pegs$x,
+        pegs$y,
+        pch = point_pch,
+        col = point_col,
+        bg = point_bg,
+        cex = point_cex
       )
     }
 
     if (show_labels) {
-      fator_x <- 1.08
-      fator_y <- 1.08
+      label_xy <- rotate_points(
+        x = 1.08 * a * cos(theta),
+        y = 1.08 * b * sin(theta),
+        angle = rotate
+      )
+
       graphics::text(
-        x = fator_x * pregos$x,
-        y = fator_y * pregos$y,
-        labels = pregos$indice,
-        cex = cex_labels,
+        label_xy$x,
+        label_xy$y,
+        labels = pegs$index,
+        cex = label_cex,
         col = label_col
       )
     }
   }
 
-  # ---------------------------------------------------------------------------
-  # Mensagens
-  # ---------------------------------------------------------------------------
   if (verbose) {
-    message(sprintf(
-      "Comprimento total do barbante: %.4f unidades.",
-      comprimento_total
-    ))
-
-    d <- gcd_int(n, k)
-    if (d == 1L) {
-      message("A regra modular gera um único ciclo passando por todos os pregos.")
-    } else {
-      message(sprintf(
-        "A regra modular gera %d ciclos independentes (gcd(n, k) = %d).",
-        d, d
-      ))
-    }
+    message(paste(audit, collapse = "\n"))
   }
 
-  # ---------------------------------------------------------------------------
-  # Retorno padronizado
-  # ---------------------------------------------------------------------------
-  res <- list(
-    pregos = pregos,
-    conexoes = conexoes,
-    comprimento_total = comprimento_total,
+  result <- list(
+    pegs = pegs,
+    connections = connections,
+    total_length = total_length,
+    audit = audit,
     meta = list(
-      figura = "elipse",
-      regra = "j = (i + k - 1) %% n + 1",
-      parametros = list(
+      figure = "ellipse",
+      family = "elliptical",
+      rule = "additive_modular",
+      formula = "to = ((from + k - 1) %% n) + 1",
+      parameters = list(
         n = n,
         k = k,
         a = a,
         b = b,
+        rotate = rotate,
         col = col,
-        lwd = lwd
-      ),
-      pacote = "stringArt"
+        lwd = lwd,
+        show_points = show_points,
+        show_labels = show_labels,
+        show_strings = show_strings,
+        template = template
+      )
     )
   )
 
-  class(res) <- c("stringart_result", class(res))
+  class(result) <- c("stringart_result", class(result))
 
-  invisible(res)
+  invisible(result)
 }

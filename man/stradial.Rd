@@ -2,149 +2,139 @@
 % Please edit documentation in R/stradial.R
 \name{stradial}
 \alias{stradial}
-\title{Gera uma figura radial de String Art com módulos triangulares}
+\title{Generate a radial string art pattern with triangular modules}
 \usage{
 stradial(
-  n,
-  k,
-  ...,
-  m = 1,
-  r = 1.2,
-  spread = pi/5,
-  col = rainbow(m),
+  n = 18,
+  k = 5,
+  col = "blue",
   lwd = 1,
   plot = TRUE,
-  show_points = FALSE,
-  cex_pregos = 0.8,
-  col_pregos = "black",
+  show_points = TRUE,
   show_labels = FALSE,
-  cex_labels = 0.7,
-  label_col = "black",
-  verbose = TRUE,
-  border_col = "black",
-  border_lwd = 1.1,
+  verbose = FALSE,
+  m = 6,
+  r = 1.2,
+  spread = pi/5,
+  rotate = 0,
+  show_strings = TRUE,
+  template = FALSE,
+  point_col = "black",
+  point_cex = 0.8,
+  point_pch = 21,
   point_bg = "white",
-  pch_points = 21,
+  label_cex = 0.7,
+  label_col = "black",
+  border_col = "grey50",
+  border_lwd = 1,
+  bg = "white",
+  main = NULL,
   show_center = TRUE,
   center_col = "black",
-  cex_center = 0.9
+  center_cex = 0.9
 )
 }
 \arguments{
-\item{n}{Inteiro maior ou igual a 3. Número de pregos em cada módulo triangular.}
+\item{n}{Integer. Number of pegs in each triangular module. Must be at least 3.}
 
-\item{k}{Inteiro entre 1 e \code{n - 1}. Salto entre os pregos dentro de cada módulo.}
+\item{k}{Integer. Additive modular step used inside each module. Must satisfy
+\verb{1 <= k <= n - 1}.}
 
-\item{...}{Argumentos adicionais não utilizados diretamente, mantidos para
-compatibilidade com o contrato padronizado do pacote.}
+\item{col}{String color, or a vector of colors with length 1 or \code{m}, used to
+draw the string connections.}
 
-\item{m}{Inteiro maior ou igual a 1. Número de módulos rotacionados em torno do centro.}
+\item{lwd}{Positive number. Line width used to draw the strings.}
 
-\item{r}{Número positivo. Distância do centro aos vértices externos do módulo.}
+\item{plot}{Logical. If \code{TRUE}, draws the figure.}
 
-\item{spread}{Número positivo em radianos. Abertura angular de cada módulo.}
+\item{show_points}{Logical. If \code{TRUE}, draws the pegs.}
 
-\item{col}{Vetor de cores dos módulos. Deve ter comprimento 1 ou \code{m}.}
+\item{show_labels}{Logical. If \code{TRUE}, draws peg labels.}
 
-\item{lwd}{Número positivo. Espessura das linhas do barbante.}
+\item{verbose}{Logical. If \code{TRUE}, prints a short audit to the console.}
 
-\item{plot}{Lógico. Se \code{TRUE}, desenha a figura.}
+\item{m}{Integer. Number of triangular modules.}
 
-\item{show_points}{Lógico. Se \code{TRUE}, desenha os pregos.}
+\item{r}{Positive number. Distance from the origin to the two outer vertices
+of each triangular module.}
 
-\item{cex_pregos}{Número positivo. Tamanho dos pregos.}
+\item{spread}{Positive number. Angular opening, in radians, of each module.}
 
-\item{col_pregos}{Cor da borda dos pregos.}
+\item{rotate}{Numeric. Rotation angle in radians applied to the whole figure.}
 
-\item{show_labels}{Lógico. Se \code{TRUE}, escreve o índice local de cada prego.}
+\item{show_strings}{Logical. If \code{TRUE}, draws the string connections.}
 
-\item{cex_labels}{Número positivo. Tamanho dos rótulos.}
+\item{template}{Logical. If \code{TRUE}, draws only the peg template, without
+string connections. This is equivalent to setting \code{show_strings = FALSE}
+and \code{show_points = TRUE}.}
 
-\item{label_col}{Cor dos rótulos.}
+\item{point_col}{Peg border color.}
 
-\item{verbose}{Lógico. Se \code{TRUE}, imprime informações da construção.}
+\item{point_cex}{Positive number. Peg size.}
 
-\item{border_col}{Cor do contorno dos módulos.}
+\item{point_pch}{Plotting symbol used for pegs.}
 
-\item{border_lwd}{Número positivo. Espessura do contorno dos módulos.}
+\item{point_bg}{Peg background color when applicable.}
 
-\item{point_bg}{Cor de preenchimento dos pregos.}
+\item{label_cex}{Positive number. Label size.}
 
-\item{pch_points}{Símbolo gráfico dos pregos.}
+\item{label_col}{Label color.}
 
-\item{show_center}{Lógico. Se \code{TRUE}, destaca o centro.}
+\item{border_col}{Module border color.}
 
-\item{center_col}{Cor do ponto central.}
+\item{border_lwd}{Positive number. Module border line width.}
 
-\item{cex_center}{Número positivo. Tamanho do ponto central.}
+\item{bg}{Plot background color.}
+
+\item{main}{Optional plot title. If \code{NULL}, no title is displayed.}
+
+\item{show_center}{Logical. If \code{TRUE}, highlights the origin.}
+
+\item{center_col}{Color used to highlight the origin.}
+
+\item{center_cex}{Positive number. Size of the highlighted origin.}
 }
 \value{
-Invisivelmente, uma lista com:
+Invisibly returns a list of class \code{stringart_result} with:
 \describe{
-\item{pregos}{\code{data.frame} com colunas \code{indice}, \code{x}, \code{y}, \code{grupo}
-e \code{indice_local}.}
-\item{conexoes}{\code{data.frame} com colunas canônicas
-\code{indice_conexao}, \code{prego_inicial}, \code{prego_final}, \code{x_inicial},
-\code{y_inicial}, \code{x_final}, \code{y_final}, \code{comprimento}, além dos aliases
-\code{i}, \code{j}, \code{x1}, \code{y1}, \code{x2}, \code{y2}, e das colunas extras
-\code{grupo}, \code{indice_local_inicial}, \code{indice_local_final} e \code{cor}.}
-\item{comprimento_total}{Comprimento total do barbante.}
-\item{meta}{Metadados da construção.}
+\item{pegs}{A \code{data.frame} with columns \code{index}, \code{x}, \code{y}, \code{module}, and
+\code{local_index}.}
+\item{connections}{A \code{data.frame} with columns \code{connection_index}, \code{from},
+\code{to}, \code{x_from}, \code{y_from}, \code{x_to}, \code{y_to}, \code{length}, \code{module},
+\code{local_from}, \code{local_to}, and \code{color}.}
+\item{total_length}{Total string length.}
+\item{audit}{A character vector with audit information.}
+\item{meta}{A list with construction metadata.}
 }
 }
 \description{
-A função \code{stradial()} constrói uma figura de \emph{String Art} composta por
-módulos triangulares rotacionados em torno de um ponto central. Em cada
-módulo, \code{n} pregos são distribuídos uniformemente ao longo do contorno
-triangular, e cada prego é ligado ao prego \code{k} posições à frente,
-formando padrões geométricos característicos.
+\code{stradial()} generates a radial string art pattern composed of triangular
+modules rotated around the origin. In each module, pegs are placed along the
+triangular boundary and connected according to an additive modular rule.
 }
 \details{
-Cada módulo é tratado de forma auditável, com índices locais e globais
-dos pregos, permitindo compatibilidade com o contrato padronizado do
-pacote \code{stringArt}.
+Each module is a triangle with vertices at the origin and at two outer points
+determined by \code{r} and \code{spread}. The base module is rotated \code{m} times around
+the origin.
 
-Cada módulo triangular é formado por três vértices:
+Within each module, the local connection rule is:
 
-\enumerate{
-\item o centro \verb{(0, 0)};
-\item um vértice externo à esquerda;
-\item um vértice externo à direita.
-}
+\code{to = ((from + k - 1) \%\% n) + 1}.
 
-O módulo base é rotacionado de forma uniforme em torno da origem para gerar
-os \code{m} módulos. Em cada módulo, os pregos são distribuídos ao longo do
-contorno triangular, de forma geométrica, coerente, auditável e reproduzível.
-
-A regra local de ligação é:
-\code{j <- (i + k - 1) \%\% n + 1},
-em que \code{i} e \code{j} pertencem a \verb{1, ..., n} dentro de cada módulo.
-
-Os índices globais dos pregos são sequenciais ao longo dos módulos:
-
-\enumerate{
-\item módulo 1: \verb{1, ..., n};
-\item módulo 2: \verb{n + 1, ..., 2n};
-\item ...;
-\item módulo \code{m}: \verb{((m - 1)n + 1), ..., mn}.
-}
+This means that each local peg is connected to the peg \code{k} positions ahead,
+using modular indexing. The same local rule is applied independently to all
+modules.
 }
 \examples{
-# Exemplo básico
-res <- stradial(n = 20, k = 4, m = 6)
+stradial()
 
-# Exemplo com pregos e rótulos
-res <- stradial(
-  n = 18, k = 5, m = 5,
-  show_points = TRUE,
-  show_labels = TRUE
-)
+res <- stradial(plot = FALSE)
+head(res$pegs)
+head(res$connections)
+res$total_length
 
-# Exemplo sem gráfico
-res <- stradial(
-  n = 16, k = 3, m = 4,
-  plot = FALSE, verbose = FALSE
-)
-res$comprimento_total
+stradial(n = 18, k = 5, m = 6, col = "steelblue", lwd = 0.8)
+stradial(n = 12, k = 4, m = 5, show_points = TRUE, show_labels = TRUE)
+stradial(template = TRUE)
 
 }

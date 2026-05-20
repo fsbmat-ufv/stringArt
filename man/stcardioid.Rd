@@ -2,126 +2,119 @@
 % Please edit documentation in R/stcardioid.R
 \name{stcardioid}
 \alias{stcardioid}
-\title{Gera uma figura de String Art circular com efeito de cardioide}
+\title{Generate a circular string art pattern with a cardioid effect}
 \usage{
 stcardioid(
-  n,
-  k,
-  r = 1,
-  ...,
+  n = 120,
+  k = 2,
   col = "antiquewhite",
   lwd = 0.8,
   plot = TRUE,
   show_points = FALSE,
-  cex_pregos = 0.8,
-  col_pregos = "darkorange2",
   show_labels = FALSE,
-  cex_labels = 0.7,
+  verbose = FALSE,
+  r = 1,
+  rotate = 0,
+  show_strings = TRUE,
+  template = FALSE,
+  point_col = "darkorange2",
+  point_cex = 0.8,
+  point_pch = 21,
+  point_bg = "white",
+  label_cex = 0.7,
   label_col = "black",
-  verbose = TRUE,
-  pch_pregos = 21,
-  bg_pregos = "white",
   border_col = "goldenrod3",
   border_lwd = 1.2,
   bg = "white",
-  rotate = 0
+  main = NULL
 )
 }
 \arguments{
-\item{n}{Inteiro maior ou igual a 3. Número de pregos.}
+\item{n}{Integer. Number of pegs placed on the circle. Must be at least 3.}
 
-\item{k}{Inteiro entre 1 e \code{n - 1}. Fator multiplicativo modular da conexão.}
+\item{k}{Integer. Multiplication factor used in the modular connection rule.
+Must satisfy \verb{1 <= k <= n - 1}.}
 
-\item{r}{Número positivo. Raio da circunferência.}
+\item{col}{String color passed to \code{\link[graphics:segments]{graphics::segments()}}.}
 
-\item{...}{Argumentos adicionais não utilizados diretamente, mantidos para
-compatibilidade com o contrato padronizado do pacote.}
+\item{lwd}{Positive number. Line width used to draw the strings.}
 
-\item{col}{Cor das conexões.}
+\item{plot}{Logical. If \code{TRUE}, draws the figure.}
 
-\item{lwd}{Número positivo. Espessura das conexões.}
+\item{show_points}{Logical. If \code{TRUE}, draws the pegs.}
 
-\item{plot}{Lógico. Se \code{TRUE}, desenha a figura.}
+\item{show_labels}{Logical. If \code{TRUE}, draws peg labels.}
 
-\item{show_points}{Lógico. Se \code{TRUE}, mostra os pregos.}
+\item{verbose}{Logical. If \code{TRUE}, prints a short audit to the console.}
 
-\item{cex_pregos}{Número positivo. Tamanho dos pregos.}
+\item{r}{Positive number. Radius of the circle.}
 
-\item{col_pregos}{Cor da borda dos pregos.}
+\item{rotate}{Numeric. Rotation angle in radians applied to the whole figure.}
 
-\item{show_labels}{Lógico. Se \code{TRUE}, mostra os rótulos dos pregos.}
+\item{show_strings}{Logical. If \code{TRUE}, draws the string connections.}
 
-\item{cex_labels}{Número positivo. Tamanho dos rótulos.}
+\item{template}{Logical. If \code{TRUE}, draws only the peg template, without
+string connections. This is equivalent to setting \code{show_strings = FALSE}
+and \code{show_points = TRUE}.}
 
-\item{label_col}{Cor dos rótulos.}
+\item{point_col}{Peg border color.}
 
-\item{verbose}{Lógico. Se \code{TRUE}, exibe mensagens informativas.}
+\item{point_cex}{Positive number. Peg size.}
 
-\item{pch_pregos}{Símbolo gráfico dos pregos.}
+\item{point_pch}{Plotting symbol used for pegs.}
 
-\item{bg_pregos}{Cor de preenchimento dos pregos, quando aplicável.}
+\item{point_bg}{Peg background color when applicable.}
 
-\item{border_col}{Cor da circunferência externa.}
+\item{label_cex}{Positive number. Label size.}
 
-\item{border_lwd}{Número positivo. Espessura da borda externa.}
+\item{label_col}{Label color.}
 
-\item{bg}{Cor de fundo do gráfico.}
+\item{border_col}{Circle border color.}
 
-\item{rotate}{Número real. Ângulo de rotação, em radianos.}
+\item{border_lwd}{Positive number. Circle border line width.}
+
+\item{bg}{Plot background color.}
+
+\item{main}{Optional plot title. If \code{NULL}, no title is displayed.}
 }
 \value{
-Invisivelmente, uma lista com:
+Invisibly returns a list of class \code{stringart_result} with:
 \describe{
-\item{pregos}{\code{data.frame} com colunas \code{indice}, \code{x} e \code{y}.}
-\item{conexoes}{\code{data.frame} com colunas canônicas
-\code{indice_conexao}, \code{prego_inicial}, \code{prego_final}, \code{x_inicial},
-\code{y_inicial}, \code{x_final}, \code{y_final}, \code{comprimento}, além dos aliases
-\code{i}, \code{j}, \code{x1}, \code{y1}, \code{x2}, \code{y2}.}
-\item{comprimento_total}{Comprimento total do barbante.}
-\item{meta}{Metadados da construção.}
+\item{pegs}{A \code{data.frame} with columns \code{index}, \code{x}, and \code{y}.}
+\item{connections}{A \code{data.frame} with columns \code{connection_index},
+\code{from}, \code{to}, \code{x_from}, \code{y_from}, \code{x_to}, \code{y_to}, and \code{length}.}
+\item{total_length}{Total string length.}
+\item{audit}{A character vector with audit information.}
+\item{meta}{A list with construction metadata.}
 }
 }
 \description{
-A função \code{stcardioid()} constrói uma figura de \emph{String Art} sobre uma
-circunferência, posicionando \code{n} pregos igualmente espaçados e conectando
-cada prego ao prego determinado por uma regra multiplicativa modular baseada
-em \code{k}.
+\code{stcardioid()} generates a circular string art pattern by placing equally
+spaced pegs on a circle and connecting each peg to another peg according to
+a multiplicative modular rule.
 }
 \details{
-A circunferência é centrada na origem, com raio \code{r}, e os pregos são
-numerados de \code{1} a \code{n} no sentido anti-horário, a partir do ponto
-\verb{(r, 0)}, podendo ser rotacionados por \code{rotate}.
+The pegs are placed on a circle of radius \code{r}, centered at the origin. Pegs
+are indexed from \code{1} to \code{n} in counterclockwise order, starting at \verb{(r, 0)},
+after applying the optional rotation angle \code{rotate}.
 
-Os pregos são distribuídos uniformemente sobre uma circunferência de raio \code{r}.
-A ordem dos pregos é explícita, geométrica, auditável e reproduzível.
+The multiplicative modular connection rule is:
 
-A regra de ligação utilizada é:
-\code{j <- ((k * (i - 1)) \%\% n) + 1}.
+\code{to = ((k * (from - 1)) \%\% n) + 1}.
 
-Essa regra gera padrões clássicos de \emph{String Art} baseados em tabelas
-multiplicativas modulares. Quando \code{k = 2}, obtém-se a figura clássica
-associada ao efeito de cardioide.
+For \code{k = 2}, this rule produces the classical circular multiplication-table
+pattern commonly associated with a cardioid-like envelope.
 }
 \examples{
-# Exemplo básico
-stcardioid(n = 120, k = 2, r = 1, col = "wheat", lwd = 0.8)
+stcardioid()
 
-# Exemplo com auditoria visual
-stcardioid(
-  n = 12, k = 2, r = 1,
-  col = "steelblue", lwd = 1,
-  show_points = TRUE,
-  show_labels = TRUE,
-  verbose = TRUE
-)
+res <- stcardioid(plot = FALSE)
+head(res$pegs)
+head(res$connections)
+res$total_length
 
-# Exemplo sem gráfico
-res <- stcardioid(
-  n = 80, k = 2, r = 1,
-  plot = FALSE, verbose = FALSE
-)
-res$comprimento_total
-head(res$pregos)
-head(res$conexoes)
+stcardioid(n = 80, k = 2, col = "steelblue", lwd = 0.8)
+stcardioid(n = 24, k = 5, show_points = TRUE, show_labels = TRUE)
+stcardioid(template = TRUE)
 
 }

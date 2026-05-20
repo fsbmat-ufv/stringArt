@@ -2,89 +2,136 @@
 % Please edit documentation in R/stregion.R
 \name{stregion}
 \alias{stregion}
-\title{Gera uma figura de String Art preenchida a partir de um contorno}
+\title{Generate a string art figure from a closed region contour}
 \usage{
 stregion(
-  contorno,
   n = 100,
   k = 4,
   col = "red",
   lwd = 0.6,
-  draw_border = TRUE,
-  border_col = col,
-  border_lwd = 1.2,
-  show_points = FALSE,
-  pch_pregos = 19,
-  cex_pregos = 0.4,
-  col_pregos = "gray20",
-  show_labels = FALSE,
-  cex_labels = 0.6,
-  label_col = "black",
-  verbose = FALSE,
-  add = FALSE,
   plot = TRUE,
+  show_points = TRUE,
+  show_labels = FALSE,
+  verbose = FALSE,
+  contour = NULL,
+  show_strings = TRUE,
+  template = FALSE,
+  draw_border = TRUE,
+  border_col = "grey50",
+  border_lwd = 1,
+  point_col = "black",
+  point_cex = 0.5,
+  point_pch = 19,
+  point_bg = "white",
+  label_cex = 0.6,
+  label_col = "black",
+  bg = "white",
+  main = NULL,
+  add = FALSE,
   xlim = NULL,
   ylim = NULL
 )
 }
 \arguments{
-\item{contorno}{Data frame com colunas \code{x} e \code{y} definindo o contorno.}
+\item{n}{Integer. Number of pegs placed along the contour. Must be at least 4.}
 
-\item{n}{Inteiro par >= 4. Numero de pregos no contorno.}
+\item{k}{Integer. Number of sweep offsets used to fill the region. Must be at
+least 1.}
 
-\item{k}{Inteiro >= 1. Numero de passagens de varredura. Cada passagem
-usa um offset diferente, aumentando a densidade de preenchimento.
-Use \code{k = 1} para preenchimento simples (cordas paralelas), \code{k = 3}
-a \code{k = 6} para preenchimento denso.}
+\item{col}{String color passed to \code{\link[graphics:segments]{graphics::segments()}}.}
 
-\item{col}{Cor das linhas.}
+\item{lwd}{Positive number. Line width used to draw the strings.}
 
-\item{lwd}{Espessura das linhas.}
+\item{plot}{Logical. If \code{TRUE}, draws the figure.}
 
-\item{draw_border}{Logico. Desenha o contorno.}
+\item{show_points}{Logical. If \code{TRUE}, draws the pegs.}
 
-\item{border_col}{Cor do contorno.}
+\item{show_labels}{Logical. If \code{TRUE}, draws peg labels.}
 
-\item{border_lwd}{Espessura do contorno.}
+\item{verbose}{Logical. If \code{TRUE}, prints a short audit to the console.}
 
-\item{show_points}{Logico. Desenha os pregos.}
+\item{contour}{Optional \code{data.frame} with columns \code{x} and \code{y} defining a
+closed or open polygonal contour. If \code{NULL}, a default ellipse-like contour
+is used.}
 
-\item{pch_pregos, cex_pregos, col_pregos}{Simbolo, tamanho e cor dos pregos.}
+\item{show_strings}{Logical. If \code{TRUE}, draws the string connections.}
 
-\item{show_labels}{Logico. Escreve indices dos pregos.}
+\item{template}{Logical. If \code{TRUE}, draws only the peg template, without
+string connections. This is equivalent to setting \code{show_strings = FALSE}
+and \code{show_points = TRUE}.}
 
-\item{cex_labels, label_col}{Tamanho e cor dos rotulos.}
+\item{draw_border}{Logical. If \code{TRUE}, draws the region border.}
 
-\item{verbose}{Logico. Imprime conexoes no console.}
+\item{border_col}{Border color.}
 
-\item{add}{Logico. Adiciona ao grafico existente.}
+\item{border_lwd}{Positive number. Border line width.}
 
-\item{plot}{Logico. Desenha a figura.}
+\item{point_col}{Peg color.}
 
-\item{xlim, ylim}{Limites dos eixos (so quando \code{add = FALSE}).}
+\item{point_cex}{Positive number. Peg size.}
+
+\item{point_pch}{Plotting symbol used for pegs.}
+
+\item{point_bg}{Peg background color when applicable.}
+
+\item{label_cex}{Positive number. Label size.}
+
+\item{label_col}{Label color.}
+
+\item{bg}{Plot background color.}
+
+\item{main}{Optional plot title. If \code{NULL}, no title is displayed.}
+
+\item{add}{Logical. If \code{TRUE}, adds the string art region to the current
+graphics device instead of creating a new plot.}
+
+\item{xlim, ylim}{Optional axis limits used when \code{plot = TRUE} and
+\code{add = FALSE}.}
 }
 \value{
-Invisivelmente, lista com \code{pregos}, \code{conexoes} e
-\code{comprimento_total}.
+Invisibly returns a list of class \code{stringart_result} with:
+\describe{
+\item{pegs}{A \code{data.frame} with columns \code{index}, \code{x}, and \code{y}.}
+\item{connections}{A \code{data.frame} with columns \code{connection_index},
+\code{from}, \code{to}, \code{x_from}, \code{y_from}, \code{x_to}, \code{y_to}, \code{length}, \code{sweep},
+and \code{offset}.}
+\item{total_length}{Total string length.}
+\item{audit}{A character vector with audit information.}
+\item{meta}{A list with construction metadata.}
+}
 }
 \description{
-Distribui \code{n} pregos ao longo do perimetro do contorno e conecta cada
-prego ao seu \strong{oposto} no contorno (prego \code{i + floor(n/2)}), de forma
-que cada corda \strong{atravessa o interior} da regiao. Para aumentar a
-densidade de preenchimento, sao feitas \code{k} passagens com offsets de
-0 a \code{k-1}, produzindo um feixe de cordas inclinadas que cobrem toda
-a area como um tecido de linhas entrecruzadas.
+\code{stregion()} generates a filled string art pattern from a closed contour.
+Pegs are distributed along the contour and connected to approximately opposite
+pegs, producing strings that cross the interior of the region.
+}
+\details{
+Unlike circular, elliptical, or triangular modular string art patterns that
+usually connect nearby pegs using a fixed additive step, \code{stregion()} is
+designed to fill a region. It connects each peg to a peg located approximately
+on the opposite side of the contour.
+
+The main connection rule is:
+
+\code{to = ((from - 1 + floor(n / 2) + offset) \%\% n) + 1}.
+
+The argument \code{k} controls the number of offsets. Each offset produces one
+sweep of strings across the interior. Larger values of \code{k} create denser
+fillings.
 }
 \examples{
-# Circulo preenchido
-ct <- contorno_circulo(r = 1)
-stregion(ct, n = 100, k = 4, col = "steelblue", lwd = 0.6)
+stregion()
 
-# Elipse preenchida
-ct <- contorno_elipse(a = 1.5, b = 0.8)
-stregion(ct, n = 120, k = 5, col = "firebrick", lwd = 0.6)
+res <- stregion(plot = FALSE)
+head(res$pegs)
+head(res$connections)
+res$total_length
 
-}
-\seealso{
-\code{\link[=stmushroom]{stmushroom()}}
+custom_contour <- data.frame(
+  x = c(0, 1, 0.6, -0.6, -1),
+  y = c(1, 0.2, -0.9, -0.9, 0.2)
+)
+stregion(contour = custom_contour, n = 80, k = 3, col = "steelblue")
+stregion(template = TRUE)
+
 }

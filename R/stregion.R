@@ -1,474 +1,408 @@
-# =============================================================================
-#  stregion.R  –  String Art a partir de um contorno poligonal
-# =============================================================================
-#
-#  COMO O PREENCHIMENTO FUNCIONA
-#  ------------------------------
-#  A abordagem correta para preencher uma regiao em String Art e:
-#
-#  1. Distribuir n pregos ao longo do CONTORNO da regiao (como na moldura
-#     fisica com pregos nas bordas).
-#
-#  2. Conectar cada prego i ao prego  j = (i + floor(n/2)) % n
-#     Isso garante que o prego destino esteja NO LADO OPOSTO do contorno,
-#     de modo que a corda sempre ATRAVESSA o interior.
-#
-#  3. Para aumentar a densidade, repetir a varredura com diferentes
-#     offsets: j = (i + floor(n/2) + offset) % n, para offset em 0..k-1.
-#     Cada offset gera um conjunto de cordas ligeiramente inclinadas,
-#     e juntas cobrem toda a area como um tecido de linhas cruzadas.
-#
-#  DIFERENCA CRITICA em relacao as outras funcoes da serie:
-#  - stcircle/sttriangle/etc: conecta prego i ao prego i+k (vizinhos
-#    proximos => cria padroes geometricos na BORDA)
-#  - stregion: conecta prego i ao prego OPOSTO (cruza o interior =>
-#    PREENCHE a regiao)
-#
-# =============================================================================
-
-
-# -----------------------------------------------------------------------------
-# 1. contorno_circulo
-# -----------------------------------------------------------------------------
-
-#' Gera um contorno circular (ou arco)
+#' Generate a string art figure from a closed region contour
 #'
-#' @param cx,cy Centro do circulo.
-#' @param r Raio.
-#' @param ang_ini,ang_fim Angulos inicial e final em radianos.
-#' @param n_pts Numero de pontos do poligono aproximador.
-#' @return Data frame com colunas `x` e `y`.
-#' @export
-contorno_circulo <- function(cx = 0, cy = 0, r = 1,
-                             ang_ini = 0, ang_fim = 2 * pi,
-                             n_pts = 200) {
-  theta <- seq(ang_ini, ang_fim, length.out = n_pts)
-  data.frame(x = cx + r * cos(theta),
-             y = cy + r * sin(theta))
-}
-
-
-# -----------------------------------------------------------------------------
-# 2. contorno_elipse
-# -----------------------------------------------------------------------------
-
-#' Gera um contorno eliptico (ou arco de elipse)
+#' `stregion()` generates a filled string art pattern from a closed contour.
+#' Pegs are distributed along the contour and connected to approximately opposite
+#' pegs, producing strings that cross the interior of the region.
 #'
-#' @param cx,cy Centro.
-#' @param a Semi-eixo horizontal.
-#' @param b Semi-eixo vertical.
-#' @param ang_ini,ang_fim Angulos parametricos inicial e final.
-#' @param n_pts Numero de pontos.
-#' @return Data frame com colunas `x` e `y`.
-#' @export
-contorno_elipse <- function(cx = 0, cy = 0, a = 1, b = 0.5,
-                            ang_ini = 0, ang_fim = 2 * pi,
-                            n_pts = 200) {
-  theta <- seq(ang_ini, ang_fim, length.out = n_pts)
-  data.frame(x = cx + a * cos(theta),
-             y = cy + b * sin(theta))
-}
-
-
-# -----------------------------------------------------------------------------
-# 3. contorno_poligono
-# -----------------------------------------------------------------------------
-
-#' Gera um contorno a partir de vertices arbitrarios
+#' @param n Integer. Number of pegs placed along the contour. Must be at least 4.
+#' @param k Integer. Number of sweep offsets used to fill the region. Must be at
+#'   least 1.
+#' @param col String color passed to [graphics::segments()].
+#' @param lwd Positive number. Line width used to draw the strings.
+#' @param plot Logical. If `TRUE`, draws the figure.
+#' @param show_points Logical. If `TRUE`, draws the pegs.
+#' @param show_labels Logical. If `TRUE`, draws peg labels.
+#' @param verbose Logical. If `TRUE`, prints a short audit to the console.
+#' @param contour Optional `data.frame` with columns `x` and `y` defining a
+#'   closed or open polygonal contour. If `NULL`, a default ellipse-like contour
+#'   is used.
+#' @param show_strings Logical. If `TRUE`, draws the string connections.
+#' @param template Logical. If `TRUE`, draws only the peg template, without
+#'   string connections. This is equivalent to setting `show_strings = FALSE`
+#'   and `show_points = TRUE`.
+#' @param draw_border Logical. If `TRUE`, draws the region border.
+#' @param border_col Border color.
+#' @param border_lwd Positive number. Border line width.
+#' @param point_col Peg color.
+#' @param point_cex Positive number. Peg size.
+#' @param point_pch Plotting symbol used for pegs.
+#' @param point_bg Peg background color when applicable.
+#' @param label_cex Positive number. Label size.
+#' @param label_col Label color.
+#' @param bg Plot background color.
+#' @param main Optional plot title. If `NULL`, no title is displayed.
+#' @param add Logical. If `TRUE`, adds the string art region to the current
+#'   graphics device instead of creating a new plot.
+#' @param xlim,ylim Optional axis limits used when `plot = TRUE` and
+#'   `add = FALSE`.
 #'
-#' @param vx,vy Coordenadas dos vertices.
-#' @param n_pts Numero de pontos ao longo do perimetro.
-#' @return Data frame com colunas `x` e `y`.
-#' @export
-contorno_poligono <- function(vx, vy, n_pts = 200) {
-  if (length(vx) != length(vy) || length(vx) < 2)
-    stop("'vx' e 'vy' devem ter o mesmo comprimento e pelo menos 2 elementos.")
-  vx <- c(vx, vx[1]); vy <- c(vy, vy[1])
-  dx <- diff(vx); dy <- diff(vy)
-  lens <- sqrt(dx^2 + dy^2)
-  per  <- sum(lens)
-  s_total <- seq(0, per, length.out = n_pts + 1)[-(n_pts + 1)]
-  cum_len <- c(0, cumsum(lens))
-  pts <- data.frame(x = numeric(n_pts), y = numeric(n_pts))
-  for (i in seq_len(n_pts)) {
-    s  <- s_total[i]
-    sg <- min(findInterval(s, cum_len, rightmost.closed = TRUE), length(lens))
-    t  <- (s - cum_len[sg]) / lens[sg]
-    pts$x[i] <- (1 - t) * vx[sg] + t * vx[sg + 1]
-    pts$y[i] <- (1 - t) * vy[sg] + t * vy[sg + 1]
-  }
-  pts
-}
-
-
-# -----------------------------------------------------------------------------
-# Auxiliar interno: distribui n pregos ao longo de um contorno fechado
-# -----------------------------------------------------------------------------
-.pregos_no_contorno <- function(contorno, n) {
-  cx <- contorno$x; cy <- contorno$y
-  dx  <- diff(c(cx, cx[1])); dy  <- diff(c(cy, cy[1]))
-  seg <- sqrt(dx^2 + dy^2);  per <- sum(seg)
-  s_pts   <- seq(0, per, length.out = n + 1)[-(n + 1)]
-  cum_len <- c(0, cumsum(seg))
-  cx_c <- c(cx, cx[1]); cy_c <- c(cy, cy[1])
-  pts <- data.frame(x = numeric(n), y = numeric(n))
-  for (i in seq_len(n)) {
-    s  <- s_pts[i]
-    sg <- min(findInterval(s, cum_len, rightmost.closed = TRUE), length(seg))
-    t  <- (s - cum_len[sg]) / seg[sg]
-    pts$x[i] <- (1 - t) * cx_c[sg] + t * cx_c[sg + 1]
-    pts$y[i] <- (1 - t) * cy_c[sg] + t * cy_c[sg + 1]
-  }
-  pts
-}
-
-
-# -----------------------------------------------------------------------------
-# 4. stregion
-# -----------------------------------------------------------------------------
-
-#' Gera uma figura de String Art preenchida a partir de um contorno
+#' @details
+#' Unlike circular, elliptical, or triangular modular string art patterns that
+#' usually connect nearby pegs using a fixed additive step, `stregion()` is
+#' designed to fill a region. It connects each peg to a peg located approximately
+#' on the opposite side of the contour.
 #'
-#' Distribui `n` pregos ao longo do perimetro do contorno e conecta cada
-#' prego ao seu **oposto** no contorno (prego `i + floor(n/2)`), de forma
-#' que cada corda **atravessa o interior** da regiao. Para aumentar a
-#' densidade de preenchimento, sao feitas `k` passagens com offsets de
-#' 0 a `k-1`, produzindo um feixe de cordas inclinadas que cobrem toda
-#' a area como um tecido de linhas entrecruzadas.
+#' The main connection rule is:
 #'
-#' @param contorno Data frame com colunas `x` e `y` definindo o contorno.
-#' @param n Inteiro par >= 4. Numero de pregos no contorno.
-#' @param k Inteiro >= 1. Numero de passagens de varredura. Cada passagem
-#'   usa um offset diferente, aumentando a densidade de preenchimento.
-#'   Use `k = 1` para preenchimento simples (cordas paralelas), `k = 3`
-#'   a `k = 6` para preenchimento denso.
-#' @param col Cor das linhas.
-#' @param lwd Espessura das linhas.
-#' @param draw_border Logico. Desenha o contorno.
-#' @param border_col Cor do contorno.
-#' @param border_lwd Espessura do contorno.
-#' @param show_points Logico. Desenha os pregos.
-#' @param pch_pregos,cex_pregos,col_pregos Simbolo, tamanho e cor dos pregos.
-#' @param show_labels Logico. Escreve indices dos pregos.
-#' @param cex_labels,label_col Tamanho e cor dos rotulos.
-#' @param verbose Logico. Imprime conexoes no console.
-#' @param add Logico. Adiciona ao grafico existente.
-#' @param plot Logico. Desenha a figura.
-#' @param xlim,ylim Limites dos eixos (so quando `add = FALSE`).
+#' `to = ((from - 1 + floor(n / 2) + offset) %% n) + 1`.
 #'
-#' @return Invisivelmente, lista com `pregos`, `conexoes` e
-#'   `comprimento_total`.
+#' The argument `k` controls the number of offsets. Each offset produces one
+#' sweep of strings across the interior. Larger values of `k` create denser
+#' fillings.
+#'
+#' @return Invisibly returns a list of class `stringart_result` with:
+#' \describe{
+#'   \item{pegs}{A `data.frame` with columns `index`, `x`, and `y`.}
+#'   \item{connections}{A `data.frame` with columns `connection_index`,
+#'   `from`, `to`, `x_from`, `y_from`, `x_to`, `y_to`, `length`, `sweep`,
+#'   and `offset`.}
+#'   \item{total_length}{Total string length.}
+#'   \item{audit}{A character vector with audit information.}
+#'   \item{meta}{A list with construction metadata.}
+#' }
 #'
 #' @examples
-#' # Circulo preenchido
-#' ct <- contorno_circulo(r = 1)
-#' stregion(ct, n = 100, k = 4, col = "steelblue", lwd = 0.6)
+#' stregion()
 #'
-#' # Elipse preenchida
-#' ct <- contorno_elipse(a = 1.5, b = 0.8)
-#' stregion(ct, n = 120, k = 5, col = "firebrick", lwd = 0.6)
+#' res <- stregion(plot = FALSE)
+#' head(res$pegs)
+#' head(res$connections)
+#' res$total_length
 #'
-#' @seealso [stmushroom()]
-#' @importFrom graphics plot polygon points segments text
+#' custom_contour <- data.frame(
+#'   x = c(0, 1, 0.6, -0.6, -1),
+#'   y = c(1, 0.2, -0.9, -0.9, 0.2)
+#' )
+#' stregion(contour = custom_contour, n = 80, k = 3, col = "steelblue")
+#' stregion(template = TRUE)
+#'
+#' @importFrom graphics par plot polygon segments points text
 #' @export
-stregion <- function(contorno,
-                     n           = 100,
-                     k           = 4,
-                     col         = "red",
-                     lwd         = 0.6,
-                     draw_border = TRUE,
-                     border_col  = col,
-                     border_lwd  = 1.2,
-                     show_points = FALSE,
-                     pch_pregos  = 19,
-                     cex_pregos  = 0.4,
-                     col_pregos  = "gray20",
+stregion <- function(n = 100,
+                     k = 4,
+                     col = "red",
+                     lwd = 0.6,
+                     plot = TRUE,
+                     show_points = TRUE,
                      show_labels = FALSE,
-                     cex_labels  = 0.6,
-                     label_col   = "black",
-                     verbose     = FALSE,
-                     add         = FALSE,
-                     plot        = TRUE,
-                     xlim        = NULL,
-                     ylim        = NULL) {
+                     verbose = FALSE,
+                     contour = NULL,
+                     show_strings = TRUE,
+                     template = FALSE,
+                     draw_border = TRUE,
+                     border_col = "grey50",
+                     border_lwd = 1,
+                     point_col = "black",
+                     point_cex = 0.5,
+                     point_pch = 19,
+                     point_bg = "white",
+                     label_cex = 0.6,
+                     label_col = "black",
+                     bg = "white",
+                     main = NULL,
+                     add = FALSE,
+                     xlim = NULL,
+                     ylim = NULL) {
 
-  if (!is.data.frame(contorno) || !all(c("x", "y") %in% names(contorno)))
-    stop("'contorno' deve ser um data frame com colunas 'x' e 'y'.")
-  if (n < 4) stop("'n' deve ser pelo menos 4.")
-  if (n %% 2 != 0) { n <- n + 1; message(sprintf("'n' ajustado para %d.", n)) }
-  if (k < 1) stop("'k' deve ser pelo menos 1.")
+  if (!is.numeric(n) || length(n) != 1L || is.na(n) ||
+      n != as.integer(n) || n < 4L) {
+    stop("`n` must be a single integer greater than or equal to 4.", call. = FALSE)
+  }
 
-  pregos <- .pregos_no_contorno(contorno, n)
-  meio   <- floor(n / 2)
+  if (!is.numeric(k) || length(k) != 1L || is.na(k) ||
+      k != as.integer(k) || k < 1L) {
+    stop("`k` must be a single positive integer.", call. = FALSE)
+  }
 
-  # Total de conexoes: n * k
-  n_conn <- n * k
-  conexoes <- data.frame(
-    passagem    = integer(n_conn),
-    i           = integer(n_conn),
-    j           = integer(n_conn),
-    x1          = numeric(n_conn),
-    y1          = numeric(n_conn),
-    x2          = numeric(n_conn),
-    y2          = numeric(n_conn),
-    comprimento = numeric(n_conn)
+  n <- as.integer(n)
+  k <- as.integer(k)
+
+  if (!is.numeric(lwd) || length(lwd) != 1L || is.na(lwd) || lwd <= 0) {
+    stop("`lwd` must be a single positive number.", call. = FALSE)
+  }
+
+  if (!is.numeric(border_lwd) || length(border_lwd) != 1L ||
+      is.na(border_lwd) || border_lwd <= 0) {
+    stop("`border_lwd` must be a single positive number.", call. = FALSE)
+  }
+
+  if (!is.numeric(point_cex) || length(point_cex) != 1L ||
+      is.na(point_cex) || point_cex <= 0) {
+    stop("`point_cex` must be a single positive number.", call. = FALSE)
+  }
+
+  if (!is.numeric(label_cex) || length(label_cex) != 1L ||
+      is.na(label_cex) || label_cex <= 0) {
+    stop("`label_cex` must be a single positive number.", call. = FALSE)
+  }
+
+  logical_args <- list(
+    plot = plot,
+    show_points = show_points,
+    show_labels = show_labels,
+    verbose = verbose,
+    show_strings = show_strings,
+    template = template,
+    draw_border = draw_border,
+    add = add
   )
-  total_length <- 0
-  idx <- 1L
+
+  for (arg_name in names(logical_args)) {
+    value <- logical_args[[arg_name]]
+    if (!is.logical(value) || length(value) != 1L || is.na(value)) {
+      stop(sprintf("`%s` must be TRUE or FALSE.", arg_name), call. = FALSE)
+    }
+  }
+
+  if (template) {
+    show_strings <- FALSE
+    show_points <- TRUE
+  }
+
+  if (is.null(contour)) {
+    contour <- .st_default_region_contour()
+  }
+
+  if (!is.data.frame(contour) || !all(c("x", "y") %in% names(contour))) {
+    stop("`contour` must be a data frame with columns `x` and `y`.", call. = FALSE)
+  }
+
+  contour <- contour[, c("x", "y")]
+  contour$x <- as.numeric(contour$x)
+  contour$y <- as.numeric(contour$y)
+
+  if (nrow(contour) < 3L || anyNA(contour$x) || anyNA(contour$y)) {
+    stop("`contour` must contain at least three valid points.", call. = FALSE)
+  }
+
+  pegs_xy <- .st_resample_closed_contour(contour, n)
+
+  pegs <- data.frame(
+    index = seq_len(n),
+    x = pegs_xy$x,
+    y = pegs_xy$y
+  )
+
+  half_turn <- floor(n / 2L)
+  offsets <- seq.int(0L, k - 1L)
+
+  connection_list <- vector("list", n * k)
+  id <- 0L
+
+  for (sweep in seq_len(k)) {
+    offset <- offsets[sweep]
+
+    from <- seq_len(n)
+    to <- ((from - 1L + half_turn + offset) %% n) + 1L
+
+    x_from <- pegs$x[from]
+    y_from <- pegs$y[from]
+    x_to <- pegs$x[to]
+    y_to <- pegs$y[to]
+
+    lengths <- sqrt((x_to - x_from)^2 + (y_to - y_from)^2)
+
+    for (i in seq_len(n)) {
+      id <- id + 1L
+
+      connection_list[[id]] <- data.frame(
+        connection_index = id,
+        from = from[i],
+        to = to[i],
+        x_from = x_from[i],
+        y_from = y_from[i],
+        x_to = x_to[i],
+        y_to = y_to[i],
+        length = lengths[i],
+        sweep = sweep,
+        offset = offset
+      )
+    }
+  }
+
+  connections <- do.call(rbind, connection_list)
+  rownames(connections) <- NULL
+
+  total_length <- sum(connections$length)
+
+  audit <- c(
+    "String Art audit",
+    "Figure: region",
+    sprintf("Number of pegs: %d", n),
+    sprintf("Number of sweeps: %d", k),
+    sprintf("Half-turn step: %d", half_turn),
+    sprintf("Number of connections: %d", nrow(connections)),
+    sprintf("Total string length: %.4f", total_length),
+    if (n %% 2L == 0L) {
+      "The number of pegs is even; opposite peg connections are exact."
+    } else {
+      "The number of pegs is odd; opposite peg connections are approximate."
+    }
+  )
 
   if (plot) {
+    old_par <- graphics::par(no.readonly = TRUE)
+    on.exit(graphics::par(old_par), add = TRUE)
+
+    graphics::par(bg = bg)
+
     if (!add) {
-      xl <- if (is.null(xlim)) range(contorno$x) + c(-0.05, 0.05) * diff(range(contorno$x)) else xlim
-      yl <- if (is.null(ylim)) range(contorno$y) + c(-0.05, 0.05) * diff(range(contorno$y)) else ylim
-      plot(NA, NA, xlim = xl, ylim = yl, asp = 1,
-           axes = FALSE, xlab = "", ylab = "")
+      x_range <- range(contour$x)
+      y_range <- range(contour$y)
+
+      x_pad <- if (diff(x_range) == 0) 0.1 else 0.06 * diff(x_range)
+      y_pad <- if (diff(y_range) == 0) 0.1 else 0.06 * diff(y_range)
+
+      if (is.null(xlim)) {
+        xlim <- x_range + c(-x_pad, x_pad)
+      }
+
+      if (is.null(ylim)) {
+        ylim <- y_range + c(-y_pad, y_pad)
+      }
+
+      graphics::plot(
+        NA, NA,
+        xlim = xlim,
+        ylim = ylim,
+        asp = 1,
+        axes = FALSE,
+        xlab = "",
+        ylab = "",
+        main = main
+      )
     }
-    if (draw_border)
-      polygon(contorno$x, contorno$y,
-              border = border_col, lwd = border_lwd, col = NA)
-  }
 
-  # k passagens de varredura com offsets de 0 a floor(meio/2).
-  # Offsets maiores que meio/2 geram cordas cada vez mais curtas que
-  # eventualmente ficam na borda — mantemos so a metade do arco.
-  offsets <- round(seq(0, floor(meio / 2), length.out = k))
+    if (draw_border) {
+      graphics::polygon(
+        contour$x,
+        contour$y,
+        border = border_col,
+        lwd = border_lwd,
+        col = NA
+      )
+    }
 
-  for (pass in seq_len(k)) {
-    off <- offsets[pass]
-    for (i in seq_len(n)) {
-      j <- (i - 1 + meio + off) %% n + 1
+    if (show_strings) {
+      graphics::segments(
+        x0 = connections$x_from,
+        y0 = connections$y_from,
+        x1 = connections$x_to,
+        y1 = connections$y_to,
+        col = col,
+        lwd = lwd
+      )
+    }
 
-      if (plot)
-        segments(pregos$x[i], pregos$y[i],
-                 pregos$x[j], pregos$y[j],
-                 col = col, lwd = lwd)
+    if (show_points) {
+      graphics::points(
+        pegs$x,
+        pegs$y,
+        pch = point_pch,
+        col = point_col,
+        bg = point_bg,
+        cex = point_cex
+      )
+    }
 
-      len <- sqrt((pregos$x[j] - pregos$x[i])^2 +
-                    (pregos$y[j] - pregos$y[i])^2)
-      total_length      <- total_length + len
-      conexoes[idx, ]   <- c(pass, i, j,
-                             pregos$x[i], pregos$y[i],
-                             pregos$x[j], pregos$y[j],
-                             len)
-      idx <- idx + 1L
+    if (show_labels) {
+      graphics::text(
+        pegs$x,
+        pegs$y,
+        labels = pegs$index,
+        pos = 3,
+        cex = label_cex,
+        col = label_col
+      )
     }
   }
-
-  if (plot && show_points)
-    points(pregos$x, pregos$y,
-           pch = pch_pregos, cex = cex_pregos, col = col_pregos)
-
-  if (plot && show_labels)
-    text(pregos$x, pregos$y, labels = seq_len(n),
-         pos = 3, cex = cex_labels, col = label_col)
 
   if (verbose) {
-    for (pass in seq_len(k)) {
-      off <- offsets[pass]
-      js  <- ((seq_len(n) - 1 + meio + off) %% n) + 1
-      txt <- paste0("Passagem ", pass,
-                    " – Prego ", seq_len(n), " -> Prego ", js)
-      cat(paste(txt, collapse = "\n"), "\n")
-    }
+    message(paste(audit, collapse = "\n"))
   }
 
-  message(sprintf("Comprimento total de barbante: %.2f unidades", total_length))
+  result <- list(
+    pegs = pegs,
+    connections = connections,
+    total_length = total_length,
+    audit = audit,
+    meta = list(
+      figure = "region",
+      family = "contour",
+      rule = "opposite_contour_sweeps",
+      formula = "to = ((from - 1 + floor(n / 2) + offset) %% n) + 1",
+      parameters = list(
+        n = n,
+        k = k,
+        col = col,
+        lwd = lwd,
+        show_points = show_points,
+        show_labels = show_labels,
+        show_strings = show_strings,
+        template = template,
+        draw_border = draw_border
+      )
+    )
+  )
 
-  invisible(list(
-    pregos            = data.frame(indice = seq_len(n),
-                                   x = pregos$x, y = pregos$y),
-    conexoes          = conexoes,
-    comprimento_total = total_length
-  ))
+  class(result) <- c("stringart_result", class(result))
+
+  invisible(result)
 }
 
+.st_default_region_contour <- function(n_points = 300L) {
+  theta <- seq(0, 2 * pi, length.out = n_points + 1L)[-(n_points + 1L)]
 
-# -----------------------------------------------------------------------------
-# 5. stmushroom
-# -----------------------------------------------------------------------------
-
-#' Gera o cogumelo do Mario em String Art
-#'
-#' Monta o cogumelo usando multiplas chamadas a `stregion()`. As regioes
-#' sao desenhadas em camadas (de tras para frente): chapeu vermelho,
-#' cabeca bege, bolinhas brancas, olhos pretos.
-#'
-#' @param n_chapeu  Pregos no chapeu (deve ser par; default 160).
-#' @param k_chapeu  Passagens de varredura no chapeu (default 5).
-#' @param n_bolinha Pregos em cada bolinha (default 80).
-#' @param k_bolinha Passagens de varredura nas bolinhas (default 4).
-#' @param n_cabeca  Pregos na cabeca (default 120).
-#' @param k_cabeca  Passagens de varredura na cabeca (default 5).
-#' @param n_olho    Pregos em cada olho (default 50).
-#' @param k_olho    Passagens de varredura nos olhos (default 3).
-#' @param lwd       Espessura das linhas (default 0.4).
-#' @param bg        Cor de fundo (default `"#1a1a2e"`).
-#' @param show_points Logico. Mostra os pregos.
-#' @param cex_pregos  Tamanho dos pregos.
-#'
-#' @return Invisivelmente, lista nomeada com os resultados de cada regiao.
-#'
-#' @examples
-#' stmushroom()
-#' stmushroom(n_chapeu = 200, n_bolinha = 100, lwd = 0.3)
-#' stmushroom(show_points = TRUE)
-#'
-#' @seealso [stregion()]
-#' @importFrom graphics par plot
-#' @export
-stmushroom <- function(n_chapeu  = 160, k_chapeu  = 5,
-                       n_bolinha = 80,  k_bolinha = 4,
-                       n_cabeca  = 120, k_cabeca  = 5,
-                       n_olho    = 50,  k_olho    = 3,
-                       lwd         = 0.4,
-                       bg          = "#1a1a2e",
-                       show_points = FALSE,
-                       cex_pregos  = 0.3) {
-
-  old_par <- par(no.readonly = TRUE)
-  on.exit(par(old_par))
-  par(bg = bg, mar = c(0, 0, 0, 0))
-
-  # ------------------------------------------------------------------
-  # Geometria
-  # ------------------------------------------------------------------
-  # O centro da elipse completa da cabeca fica em cy_head.
-  # O chapeu desce ate cy_hat = cy_head + sobreposicao, cobrindo
-  # a parte superior da cabeca (como na foto fisica).
-  #
-  # Layout vertical (de cima para baixo):
-  #   topo do chapeu    :  cy_head + b_head + r_hat  ~  1.04
-  #   base do chapeu    :  cy_hat  = cy_head + overlap
-  #   centro da cabeca  :  cy_head = 0.0
-  #   base da cabeca    :  cy_head - b_head          ~ -0.44
-
-  b_head  <- 0.44    # semi-eixo vertical da cabeca
-  a_head  <- 0.78    # semi-eixo horizontal da cabeca
-  cy_head <- 0.0     # centro da elipse da cabeca no meio do canvas
-
-  overlap <- 0.18    # quanto o chapeu desce sobre a cabeca
-  cy_hat  <- cy_head + overlap   # base do chapeu (linha de corte)
-  r_hat   <- 1.0                 # raio do semicirculo do chapeu
-
-  # Bolinhas brancas (dentro do chapeu, acima de cy_hat)
-  cx_bc <- 0.00;  cy_bc <- cy_hat + 0.38; r_bc <- 0.28  # central
-  cx_bl <- -0.58; cy_bl <- cy_hat + 0.14; r_bl <- 0.17  # esquerda
-  cx_br <-  0.58; cy_br <- cy_hat + 0.14; r_br <- 0.17  # direita
-
-  # Olhos (dentro da cabeca, abaixo de cy_hat)
-  cx_ol <- -0.24; cy_ol <- cy_head - 0.08; a_ol <- 0.12; b_ol <- 0.18
-  cx_or <-  0.24; cy_or <- cy_head - 0.08; a_or <- 0.12; b_or <- 0.18
-
-  # ------------------------------------------------------------------
-  # Plot  –  ylim ajustado a nova geometria
-  # ------------------------------------------------------------------
-  plot(NA, NA,
-       xlim = c(-1.15, 1.15),
-       ylim = c(cy_head - b_head - 0.08,
-                cy_hat  + r_hat  + 0.08),
-       asp = 1, axes = FALSE, xlab = "", ylab = "")
-
-  resultados <- list()
-
-  # ------------------------------------------------------------------
-  # 1. Chapeu vermelho
-  #    Semicirculo superior com centro em (0, cy_hat) + base reta
-  # ------------------------------------------------------------------
-  ct_hat <- rbind(
-    contorno_circulo(0, cy_hat, r_hat,
-                     ang_ini = 0, ang_fim = pi, n_pts = 300),
-    data.frame(x = seq(-r_hat, r_hat, length.out = 60),
-               y = rep(cy_hat, 60))
+  data.frame(
+    x = 1.4 * cos(theta),
+    y = 0.9 * sin(theta)
   )
+}
 
-  resultados$chapeu <- stregion(
-    ct_hat, n = n_chapeu, k = k_chapeu,
-    col = "#cc2200", lwd = lwd,
-    draw_border = TRUE, border_col = "#881100", border_lwd = 1.2,
-    show_points = show_points, cex_pregos = cex_pregos, add = TRUE
-  )
+.st_resample_closed_contour <- function(contour, n) {
+  x <- contour$x
+  y <- contour$y
 
-  # ------------------------------------------------------------------
-  # 2. Cabeca bege  –  SEMI-ELIPSE inferior
-  #    Arco de pi a 2*pi (metade de baixo) + base reta em cy_head
-  #    fechando pelo topo. Assim a cabeca aparece como uma "barriga"
-  #    abaixo do chapeu, com o topo reto encostado na base do chapeu.
-  # ------------------------------------------------------------------
-  arco_head <- contorno_elipse(0, cy_head, a_head, b_head,
-                               ang_ini = pi, ang_fim = 2 * pi,
-                               n_pts = 300)
-  # Base reta da esquerda para a direita fechando a semi-elipse pelo topo
-  base_head <- data.frame(
-    x = seq(-a_head, a_head, length.out = 60),
-    y = rep(cy_head, 60)
-  )
-  ct_head <- rbind(arco_head, base_head)
+  if (!isTRUE(all.equal(c(x[1], y[1]), c(x[length(x)], y[length(y)])))) {
+    x <- c(x, x[1])
+    y <- c(y, y[1])
+  }
 
-  resultados$cabeca <- stregion(
-    ct_head, n = n_cabeca, k = k_cabeca,
-    col = "#e8a882", lwd = lwd,
-    draw_border = TRUE, border_col = "#c07850", border_lwd = 1.2,
-    show_points = show_points, cex_pregos = cex_pregos, add = TRUE
-  )
+  dx <- diff(x)
+  dy <- diff(y)
+  segment_lengths <- sqrt(dx^2 + dy^2)
 
-  # ------------------------------------------------------------------
-  # 3. Bolinha central branca
-  # ------------------------------------------------------------------
-  resultados$bolinha_central <- stregion(
-    contorno_circulo(cx_bc, cy_bc, r_bc, n_pts = 200),
-    n = n_bolinha, k = k_bolinha,
-    col = "white", lwd = lwd,
-    draw_border = TRUE, border_col = "gray80", border_lwd = 0.8,
-    show_points = show_points, cex_pregos = cex_pregos, add = TRUE
-  )
+  if (any(segment_lengths <= 0)) {
+    keep <- c(TRUE, segment_lengths > 0)
+    x <- x[keep]
+    y <- y[keep]
+    dx <- diff(x)
+    dy <- diff(y)
+    segment_lengths <- sqrt(dx^2 + dy^2)
+  }
 
-  # ------------------------------------------------------------------
-  # 4. Bolinha lateral esquerda
-  # ------------------------------------------------------------------
-  resultados$bolinha_esq <- stregion(
-    contorno_circulo(cx_bl, cy_bl, r_bl, n_pts = 160),
-    n = n_bolinha, k = k_bolinha,
-    col = "white", lwd = lwd,
-    draw_border = TRUE, border_col = "gray80", border_lwd = 0.8,
-    show_points = show_points, cex_pregos = cex_pregos, add = TRUE
-  )
+  perimeter <- sum(segment_lengths)
 
-  # ------------------------------------------------------------------
-  # 5. Bolinha lateral direita
-  # ------------------------------------------------------------------
-  resultados$bolinha_dir <- stregion(
-    contorno_circulo(cx_br, cy_br, r_br, n_pts = 160),
-    n = n_bolinha, k = k_bolinha,
-    col = "white", lwd = lwd,
-    draw_border = TRUE, border_col = "gray80", border_lwd = 0.8,
-    show_points = show_points, cex_pregos = cex_pregos, add = TRUE
-  )
+  if (!is.finite(perimeter) || perimeter <= 0) {
+    stop("`contour` must define a closed contour with positive perimeter.", call. = FALSE)
+  }
 
-  # ------------------------------------------------------------------
-  # 6. Olho esquerdo
-  # ------------------------------------------------------------------
-  resultados$olho_esq <- stregion(
-    contorno_elipse(cx_ol, cy_ol, a_ol, b_ol, n_pts = 120),
-    n = n_olho, k = k_olho,
-    col = "#111111", lwd = lwd,
-    draw_border = TRUE, border_col = "#111111", border_lwd = 1.2,
-    show_points = show_points, cex_pregos = cex_pregos, add = TRUE
-  )
+  target_s <- seq(0, perimeter, length.out = n + 1L)[-(n + 1L)]
+  cumulative <- c(0, cumsum(segment_lengths))
 
-  # ------------------------------------------------------------------
-  # 7. Olho direito
-  # ------------------------------------------------------------------
-  resultados$olho_dir <- stregion(
-    contorno_elipse(cx_or, cy_or, a_or, b_or, n_pts = 120),
-    n = n_olho, k = k_olho,
-    col = "#111111", lwd = lwd,
-    draw_border = TRUE, border_col = "#111111", border_lwd = 1.2,
-    show_points = show_points, cex_pregos = cex_pregos, add = TRUE
-  )
+  px <- numeric(n)
+  py <- numeric(n)
 
-  total <- sum(sapply(resultados, function(r) r$comprimento_total))
-  message(sprintf(
-    "\nComprimento total (todas as regioes): %.2f unidades", total))
+  for (i in seq_len(n)) {
+    s <- target_s[i]
+    segment_id <- min(findInterval(s, cumulative, rightmost.closed = TRUE),
+                      length(segment_lengths))
 
-  invisible(resultados)
+    local_t <- (s - cumulative[segment_id]) / segment_lengths[segment_id]
+
+    px[i] <- (1 - local_t) * x[segment_id] + local_t * x[segment_id + 1L]
+    py[i] <- (1 - local_t) * y[segment_id] + local_t * y[segment_id + 1L]
+  }
+
+  data.frame(x = px, y = py)
 }

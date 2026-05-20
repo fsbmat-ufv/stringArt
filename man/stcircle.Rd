@@ -2,103 +2,110 @@
 % Please edit documentation in R/stcircle.R
 \name{stcircle}
 \alias{stcircle}
-\title{Gera uma figura de String Art circular}
+\title{Circular String Art}
 \usage{
 stcircle(
-  n = 20,
-  k = 3,
-  r = 1,
+  n = 30,
+  k = 5,
   col = "blue",
   lwd = 1,
   plot = TRUE,
   show_points = TRUE,
-  cex_pregos = 0.8,
-  col_pregos = "black",
   show_labels = FALSE,
-  cex_labels = 0.7,
+  verbose = FALSE,
+  r = 1,
+  show_strings = TRUE,
+  template = FALSE,
+  point_col = "black",
+  point_cex = 0.8,
+  point_pch = 19,
+  point_bg = "white",
+  label_cex = 0.7,
   label_col = "black",
-  verbose = TRUE
+  border_col = "grey50",
+  border_lwd = 1,
+  main = NULL
 )
 }
 \arguments{
-\item{n}{Inteiro maior ou igual a 3. Número de pregos igualmente espaçados
-sobre a circunferência.}
+\item{n}{Integer. Number of pegs on the circle. Defaults to \code{30}.}
 
-\item{k}{Inteiro entre 1 e \code{n - 1}. Salto modular da conexão.
-A conexão é dada por \code{j <- (i + k - 1) \%\% n + 1}.}
+\item{k}{Integer. Additive modular step used to define the connections.
+Defaults to \code{5}.}
 
-\item{r}{Número positivo. Raio da circunferência.}
+\item{col}{String color used to draw the segments. Defaults to \code{"blue"}.}
 
-\item{col}{Cor das conexões.}
+\item{lwd}{Positive number. Line width of the string segments. Defaults to \code{1}.}
 
-\item{lwd}{Número positivo. Espessura das conexões.}
+\item{plot}{Logical. If \code{TRUE}, the figure is drawn using base R graphics.}
 
-\item{plot}{Lógico. Se \code{TRUE}, desenha a figura.}
+\item{show_points}{Logical. If \code{TRUE}, the pegs are shown.}
 
-\item{show_points}{Lógico. Se \code{TRUE}, mostra os pregos.}
+\item{show_labels}{Logical. If \code{TRUE}, peg labels are shown.}
 
-\item{cex_pregos}{Número positivo. Tamanho dos pregos no gráfico.}
+\item{verbose}{Logical. If \code{TRUE}, an audit summary is printed to the console.}
 
-\item{col_pregos}{Cor dos pregos.}
+\item{r}{Positive number. Radius of the circle. Defaults to \code{1}.}
 
-\item{show_labels}{Lógico. Se \code{TRUE}, mostra os rótulos dos pregos.}
+\item{show_strings}{Logical. If \code{TRUE}, string segments are drawn.}
 
-\item{cex_labels}{Número positivo. Tamanho dos rótulos.}
+\item{template}{Logical. If \code{TRUE}, only the peg template is drawn. This sets
+\code{show_strings = FALSE} and \code{show_points = TRUE} internally.}
 
-\item{label_col}{Cor dos rótulos.}
+\item{point_col}{Color of the pegs.}
 
-\item{verbose}{Lógico. Se \code{TRUE}, informa o comprimento total do barbante
-e uma observação sobre a estrutura da figura.}
+\item{point_cex}{Positive number. Size of the pegs.}
+
+\item{point_pch}{Plotting symbol used for the pegs.}
+
+\item{point_bg}{Background color of the pegs when the plotting symbol allows
+filling.}
+
+\item{label_cex}{Positive number. Size of the peg labels.}
+
+\item{label_col}{Color of the peg labels.}
+
+\item{border_col}{Color of the circular border.}
+
+\item{border_lwd}{Positive number. Line width of the circular border.}
+
+\item{main}{Character string. Plot title. If \code{NULL}, a default title is used.}
 }
 \value{
-Invisivelmente, uma lista com:
+Invisibly returns a list with the following elements:
 \describe{
-\item{pregos}{\code{data.frame} com as colunas \code{indice}, \code{x} e \code{y}.}
-\item{conexoes}{\code{data.frame} com as colunas \code{prego_inicial},
-\code{prego_final}, \code{x_inicial}, \code{y_inicial}, \code{x_final}, \code{y_final}
-e \code{comprimento}.}
-\item{comprimento_total}{Número com o comprimento total do barbante.}
+\item{pegs}{A data frame with columns \code{index}, \code{x}, and \code{y}.}
+\item{connections}{A data frame with columns \code{connection_index}, \code{from},
+\code{to}, \code{x_from}, \code{y_from}, \code{x_to}, \code{y_to}, and \code{length}.}
+\item{total_length}{Total string length.}
+\item{audit}{Character vector with an audit summary.}
+\item{meta}{List with metadata about the construction.}
 }
 }
 \description{
-A função \code{stcircle()} constrói uma figura de \emph{String Art} sobre uma
-circunferência, posicionando \code{n} pregos igualmente espaçados e conectando
-cada prego ao prego \code{k} posições à frente, segundo uma regra modular fixa.
-A função também calcula o comprimento total do barbante e retorna,
-invisivelmente, os dados completos da construção.
+\code{stcircle()} creates a circular String Art figure by placing equally spaced
+pegs on a circle and connecting each peg to another peg using an additive
+modular step.
 }
 \details{
-A construção posiciona os pregos sobre uma circunferência de raio \code{r},
-centrada em \verb{(0, 0)}, numerando-os de \code{1} a \code{n} no sentido anti-horário,
-a partir do ponto \verb{(r, 0)}.
+Pegs are numbered from \code{1} to \code{n} counterclockwise, starting at \verb{(r, 0)}.
+For each peg \code{i}, the connected peg is defined by
 
-A regra de conexão é auditável e dada por
-\code{j <- (i + k - 1) \%\% n + 1},
-ou seja, cada prego \code{i} é ligado ao prego \code{k} posições à frente.
+\deqn{j = ((i + k - 1) \bmod n) + 1.}
 
-Quando \code{mdc(n, k) = 1}, a figura percorre todos os pregos em um único ciclo.
-Quando \code{mdc(n, k) > 1}, a construção se decompõe em ciclos independentes,
-ainda obedecendo exatamente à mesma regra modular.
+When \code{gcd(n, k) = 1}, the rule creates a single cycle passing through all
+pegs. When \code{gcd(n, k) > 1}, the figure is decomposed into independent cycles.
 }
 \examples{
-# Exemplo básico
-stcircle(n = 20, k = 3, r = 1, col = "blue", lwd = 1.2)
+stcircle()
 
-# Exemplo com rótulos dos pregos
-stcircle(
-  n = 12, k = 5, r = 1,
-  col = "firebrick", lwd = 1,
-  show_labels = TRUE
-)
+res <- stcircle(plot = FALSE)
+res$total_length
+head(res$connections)
 
-# Exemplo sem plot
-res <- stcircle(
-  n = 10, k = 2, r = 1,
-  col = "darkgreen", lwd = 1,
-  plot = FALSE, verbose = FALSE
-)
-res$comprimento_total
-head(res$pregos)
-head(res$conexoes)
+stcircle(n = 24, k = 7, col = "firebrick", lwd = 1.2,
+         show_points = TRUE, show_labels = TRUE)
+
+stcircle(n = 24, k = 7, template = TRUE)
 
 }

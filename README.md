@@ -1,48 +1,40 @@
----
-output: github_document
----
-
-```{r setup, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.width = 6,
-  fig.height = 6
-)
-```
 
 # stringArt <img src="man/figures/logo.png" align="right" width="120" />
 
 <!-- badges: start -->
+
 [![R-CMD-check](https://github.com/fsbmat-ufv/stringArt/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/fsbmat-ufv/stringArt/actions)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[![License:
+MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Lifecycle:
+experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 <!-- badges: end -->
 
-The **stringArt** package provides tools to generate, visualize, and audit
-geometric string art figures for mathematics teaching.
+The **stringArt** package provides tools to generate, visualize, and
+audit geometric string art figures for mathematics teaching.
 
-String art figures are built from pegs and straight string connections, creating
-visual patterns related to geometry, modular arithmetic, symmetry, and visual
-mathematics.
+String art figures are built from pegs and straight string connections,
+creating visual patterns related to geometry, modular arithmetic,
+symmetry, and visual mathematics.
 
-The package is designed for educational use and can support classroom activities
-in geometry, analytic geometry, modular arithmetic, mathematical visualization,
-and graphical programming in R.
+The package is designed for educational use and can support classroom
+activities in geometry, analytic geometry, modular arithmetic,
+mathematical visualization, and graphical programming in R.
 
 ## Installation
 
-You can install the development version of **stringArt** from GitHub with:
+You can install the development version of **stringArt** from GitHub
+with:
 
-```{r installation, eval = FALSE}
+``` r
 # install.packages("devtools")
 devtools::install_github("fsbmat-ufv/stringArt")
 ```
 
 ## Main idea
 
-Each exported function generates a string art figure and returns a standardized
-object containing:
+Each exported function generates a string art figure and returns a
+standardized object containing:
 
 - `pegs`: peg coordinates;
 - `connections`: connection table;
@@ -50,7 +42,7 @@ object containing:
 - `audit`: audit information;
 - `meta`: construction metadata.
 
-```{r basic-object, eval = FALSE}
+``` r
 library(stringArt)
 
 res <- stcircle(plot = FALSE)
@@ -67,7 +59,7 @@ res$meta
 
 ### Circular string art
 
-```{r circle-example, eval = FALSE}
+``` r
 stcircle(
   n = 40,
   k = 7,
@@ -78,7 +70,7 @@ stcircle(
 
 ### Cardioid-like pattern
 
-```{r cardioid-example, eval = FALSE}
+``` r
 stcardioid(
   n = 120,
   k = 2,
@@ -89,7 +81,7 @@ stcardioid(
 
 ### Elliptical string art
 
-```{r ellipse-example, eval = FALSE}
+``` r
 stellipse(
   n = 60,
   k = 9,
@@ -102,7 +94,7 @@ stellipse(
 
 ### Triangular string art
 
-```{r triangle-example, eval = FALSE}
+``` r
 sttriangle(
   n = 45,
   k = 8,
@@ -114,7 +106,7 @@ sttriangle(
 
 ### Hexagonal flower
 
-```{r hexaflower-example, eval = FALSE}
+``` r
 sthexaflower(
   n = 24,
   k = 5,
@@ -124,7 +116,7 @@ sthexaflower(
 
 ### Radial triangular modules
 
-```{r radial-example, eval = FALSE}
+``` r
 stradial(
   n = 18,
   k = 5,
@@ -136,7 +128,7 @@ stradial(
 
 ### Region-based string art
 
-```{r region-example, eval = FALSE}
+``` r
 stregion(
   n = 100,
   k = 4,
@@ -147,7 +139,7 @@ stregion(
 
 Custom contour:
 
-```{r custom-region, eval = FALSE}
+``` r
 custom_contour <- data.frame(
   x = c(0, 1, 0.6, -0.6, -1),
   y = c(1, 0.2, -0.9, -0.9, 0.2)
@@ -164,10 +156,10 @@ stregion(
 
 ## Peg template without strings
 
-All main functions support template mode. This is useful for generating peg
-templates without drawing the string connections.
+All main functions support template mode. This is useful for generating
+peg templates without drawing the string connections.
 
-```{r template-example, eval = FALSE}
+``` r
 stcircle(template = TRUE)
 sttriangle(template = TRUE)
 stregion(template = TRUE)
@@ -175,7 +167,7 @@ stregion(template = TRUE)
 
 ## Showing pegs and labels
 
-```{r labels-example, eval = FALSE}
+``` r
 stcircle(
   n = 20,
   k = 3,
@@ -186,10 +178,10 @@ stcircle(
 
 ## Audit information
 
-Audit information is returned as part of the object and can also be printed to
-the console with `verbose = TRUE`.
+Audit information is returned as part of the object and can also be
+printed to the console with `verbose = TRUE`.
 
-```{r audit-example, eval = FALSE}
+``` r
 res <- stcircle(n = 20, k = 3, plot = FALSE)
 
 res$audit
@@ -213,7 +205,7 @@ The current version includes:
 
 To document, test, and check the package, use:
 
-```{r development, eval = FALSE}
+``` r
 devtools::document()
 devtools::test()
 devtools::check()
@@ -221,7 +213,7 @@ devtools::check()
 
 To build the GitHub README, use:
 
-```{r build-readme, eval = FALSE}
+``` r
 devtools::build_readme()
 ```
 

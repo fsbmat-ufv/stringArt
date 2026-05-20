@@ -2,113 +2,121 @@
 % Please edit documentation in R/sttriangle.R
 \name{sttriangle}
 \alias{sttriangle}
-\title{Gera uma figura de String Art triangular}
+\title{Generate a triangular string art pattern}
 \usage{
 sttriangle(
-  n,
-  k,
-  side,
-  ...,
+  n = 30,
+  k = 7,
   col = "blue",
   lwd = 1,
   plot = TRUE,
-  show_points = FALSE,
-  cex_pregos = 0.8,
-  col_pregos = "black",
+  show_points = TRUE,
   show_labels = FALSE,
-  cex_labels = 0.7,
+  verbose = FALSE,
+  side = 2,
+  rotate = 0,
+  show_strings = TRUE,
+  template = FALSE,
+  point_col = "black",
+  point_cex = 0.8,
+  point_pch = 19,
+  point_bg = "white",
+  label_cex = 0.7,
   label_col = "black",
-  verbose = TRUE,
   border_col = "grey50",
-  border_lwd = 1
+  border_lwd = 1,
+  bg = "white",
+  main = NULL
 )
 }
 \arguments{
-\item{n}{Inteiro maior ou igual a 3. Número de pregos.}
+\item{n}{Integer. Number of pegs placed along the triangle boundary. Must be
+at least 3.}
 
-\item{k}{Inteiro entre 1 e \code{n - 1}. Salto modular da conexão.}
+\item{k}{Integer. Additive modular step used in the connection rule. Must
+satisfy \verb{1 <= k <= n - 1}.}
 
-\item{side}{Número positivo. Comprimento do lado do triângulo equilátero.}
+\item{col}{String color passed to \code{\link[graphics:segments]{graphics::segments()}}.}
 
-\item{...}{Argumentos adicionais não utilizados diretamente, mantidos para
-compatibilidade com o contrato padronizado do pacote.}
+\item{lwd}{Positive number. Line width used to draw the strings.}
 
-\item{col}{Cor das conexões.}
+\item{plot}{Logical. If \code{TRUE}, draws the figure.}
 
-\item{lwd}{Número positivo. Espessura das conexões.}
+\item{show_points}{Logical. If \code{TRUE}, draws the pegs.}
 
-\item{plot}{Lógico. Se \code{TRUE}, desenha a figura.}
+\item{show_labels}{Logical. If \code{TRUE}, draws peg labels.}
 
-\item{show_points}{Lógico. Se \code{TRUE}, mostra os pregos.}
+\item{verbose}{Logical. If \code{TRUE}, prints a short audit to the console.}
 
-\item{cex_pregos}{Número positivo. Tamanho dos pregos.}
+\item{side}{Positive number. Side length of the equilateral triangle.}
 
-\item{col_pregos}{Cor dos pregos.}
+\item{rotate}{Numeric. Rotation angle in radians applied to the whole figure.}
 
-\item{show_labels}{Lógico. Se \code{TRUE}, mostra os rótulos dos pregos.}
+\item{show_strings}{Logical. If \code{TRUE}, draws the string connections.}
 
-\item{cex_labels}{Número positivo. Tamanho dos rótulos.}
+\item{template}{Logical. If \code{TRUE}, draws only the peg template, without
+string connections. This is equivalent to setting \code{show_strings = FALSE}
+and \code{show_points = TRUE}.}
 
-\item{label_col}{Cor dos rótulos.}
+\item{point_col}{Peg color.}
 
-\item{verbose}{Lógico. Se \code{TRUE}, exibe mensagens informativas.}
+\item{point_cex}{Positive number. Peg size.}
 
-\item{border_col}{Cor da borda do triângulo.}
+\item{point_pch}{Plotting symbol used for pegs.}
 
-\item{border_lwd}{Número positivo. Espessura da borda do triângulo.}
+\item{point_bg}{Peg background color when applicable.}
+
+\item{label_cex}{Positive number. Label size.}
+
+\item{label_col}{Label color.}
+
+\item{border_col}{Triangle border color.}
+
+\item{border_lwd}{Positive number. Triangle border line width.}
+
+\item{bg}{Plot background color.}
+
+\item{main}{Optional plot title. If \code{NULL}, no title is displayed.}
 }
 \value{
-Invisivelmente, uma lista com:
+Invisibly returns a list of class \code{stringart_result} with:
 \describe{
-\item{pregos}{\code{data.frame} com colunas \code{indice}, \code{x} e \code{y}.}
-\item{conexoes}{\code{data.frame} com colunas canônicas
-\code{indice_conexao}, \code{prego_inicial}, \code{prego_final}, \code{x_inicial},
-\code{y_inicial}, \code{x_final}, \code{y_final}, \code{comprimento}, além dos aliases
-\code{i}, \code{j}, \code{x1}, \code{y1}, \code{x2}, \code{y2}.}
-\item{comprimento_total}{Comprimento total do barbante.}
-\item{vertices}{\code{data.frame} com os vértices do triângulo.}
-\item{meta}{Metadados da construção.}
+\item{pegs}{A \code{data.frame} with columns \code{index}, \code{x}, and \code{y}.}
+\item{connections}{A \code{data.frame} with columns \code{connection_index},
+\code{from}, \code{to}, \code{x_from}, \code{y_from}, \code{x_to}, \code{y_to}, and \code{length}.}
+\item{total_length}{Total string length.}
+\item{audit}{A character vector with audit information.}
+\item{meta}{A list with construction metadata, including the triangle
+vertices.}
 }
 }
 \description{
-A função \code{sttriangle()} constrói uma figura de \emph{String Art} sobre o contorno
-de um triângulo equilátero, posicionando \code{n} pregos ao longo do perímetro e
-conectando cada prego ao prego \code{k} posições à frente, segundo uma regra
-modular fixa.
+\code{sttriangle()} generates a string art pattern on the boundary of an
+equilateral triangle. Pegs are distributed uniformly along the triangle
+perimeter and connected using an additive modular rule.
 }
 \details{
-O triângulo é construído com um lado horizontal na base, centrado de forma
-simples no plano, e os pregos são numerados de \code{1} a \code{n} ao longo do
-perímetro no sentido anti-horário, começando no vértice inferior esquerdo.
+The triangle is centered at the origin using its centroid. The pegs are
+placed uniformly along the perimeter in counterclockwise order.
 
-Os pregos são distribuídos uniformemente ao longo do perímetro do triângulo
-equilátero, o que garante uma ordenação geométrica, auditável e reproduzível.
+The additive modular connection rule is:
 
-A regra de ligação utilizada é:
-\code{j <- (i + k - 1) \%\% n + 1}.
+\code{to = ((from + k - 1) \%\% n) + 1}.
 
-Quando \code{gcd(n, k) = 1}, a construção percorre todos os pregos em um único
-ciclo. Quando \code{gcd(n, k) > 1}, a figura se decompõe em ciclos independentes.
+When \code{gcd(n, k) = 1}, the modular rule forms a single cycle through all
+pegs. When \code{gcd(n, k) > 1}, the construction decomposes into independent
+cycles.
 }
 \examples{
-# Exemplo básico
+sttriangle()
+
+res <- sttriangle(plot = FALSE)
+head(res$pegs)
+head(res$connections)
+res$total_length
+
 sttriangle(n = 30, k = 7, side = 2, col = "blue", lwd = 1)
-
-# Exemplo com pregos e rótulos
-sttriangle(
-  n = 18, k = 5, side = 2,
-  col = "red", lwd = 1,
-  show_points = TRUE,
-  show_labels = TRUE
-)
-
-# Exemplo sem gráfico
-res <- sttriangle(
-  n = 20, k = 4, side = 2,
-  plot = FALSE, verbose = FALSE
-)
-res$comprimento_total
-head(res$pregos)
-head(res$conexoes)
+sttriangle(n = 18, k = 5, show_points = TRUE, show_labels = TRUE)
+sttriangle(template = TRUE)
 
 }

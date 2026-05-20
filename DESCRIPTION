@@ -1,22 +1,38 @@
 Package: stringArt
-Title: Ferramentas para Geracao de Figuras de String Art
+Title: Tools for Generating String Art Figures
 Version: 0.1.0
 Authors@R: 
     c(
-      person("Ivo", "Moreira Barbosa", email = "ivo.barbosa@ufv.br", role = "aut"),
-      person("Fernando", "de Souza Bastos", email = "fernando@ufv.br", role = c("aut", "cre"))
+        person(
+            given = "Ivo",
+            family = "Moreira Barbosa",
+            email = "ivo.barbosa@ufv.br",
+            role = "aut"
+        ),
+        person(
+            given = "Fernando",
+            family = "de Souza Bastos",
+            email = "fernando@ufv.br",
+            role = c("aut", "cre")
+        )
     )
-Description: O pacote stringArt fornece funcoes para criar e visualizar figuras geometricas 
-    do tipo String Art, como circulos, retas, elipses e parabolas. As funcoes retornam 
-    coordenadas e comprimentos de fio, permitindo aplicacoes educacionais em Matematica, 
-    Geometria Analitica e Artes Visuais.
+Description: Provides tools to generate, visualize, and audit geometric
+    string art figures for mathematics teaching. The package includes functions
+    for circular, cardioid-like, elliptical, triangular, polygonal, star,
+    parabolic, net-based, radial, hexagonal, lotus-like, rose-like, spiral,
+    Lissajous, grid-based, decimal, and contour-based string art patterns.
+    Each function returns peg coordinates, connection tables, total string
+    length, audit information, and metadata, supporting educational
+    applications in geometry, analytic geometry, modular arithmetic,
+    trigonometry, rational numbers, and visual mathematics.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 URL: https://github.com/fsbmat-ufv/stringArt
 BugReports: https://github.com/fsbmat-ufv/stringArt/issues
-Depends: R (>= 4.1)
+Depends: 
+    R (>= 4.1)
 Imports:
     graphics
 Suggests:

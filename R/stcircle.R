@@ -1,263 +1,308 @@
-#' Gera uma figura de String Art circular
+#' Circular String Art
 #'
-#' A função `stcircle()` constrói uma figura de *String Art* sobre uma
-#' circunferência, posicionando `n` pregos igualmente espaçados e conectando
-#' cada prego ao prego `k` posições à frente, segundo uma regra modular fixa.
-#' A função também calcula o comprimento total do barbante e retorna,
-#' invisivelmente, os dados completos da construção.
+#' `stcircle()` creates a circular String Art figure by placing equally spaced
+#' pegs on a circle and connecting each peg to another peg using an additive
+#' modular step.
 #'
-#' @param n Inteiro maior ou igual a 3. Número de pregos igualmente espaçados
-#'   sobre a circunferência.
-#' @param k Inteiro entre 1 e `n - 1`. Salto modular da conexão.
-#'   A conexão é dada por `j <- (i + k - 1) %% n + 1`.
-#' @param r Número positivo. Raio da circunferência.
-#' @param col Cor das conexões.
-#' @param lwd Número positivo. Espessura das conexões.
-#' @param plot Lógico. Se `TRUE`, desenha a figura.
-#' @param show_points Lógico. Se `TRUE`, mostra os pregos.
-#' @param cex_pregos Número positivo. Tamanho dos pregos no gráfico.
-#' @param col_pregos Cor dos pregos.
-#' @param show_labels Lógico. Se `TRUE`, mostra os rótulos dos pregos.
-#' @param cex_labels Número positivo. Tamanho dos rótulos.
-#' @param label_col Cor dos rótulos.
-#' @param verbose Lógico. Se `TRUE`, informa o comprimento total do barbante
-#'   e uma observação sobre a estrutura da figura.
+#' @param n Integer. Number of pegs on the circle. Defaults to `30`.
+#' @param k Integer. Additive modular step used to define the connections.
+#'   Defaults to `5`.
+#' @param col String color used to draw the segments. Defaults to `"blue"`.
+#' @param lwd Positive number. Line width of the string segments. Defaults to `1`.
+#' @param plot Logical. If `TRUE`, the figure is drawn using base R graphics.
+#' @param show_points Logical. If `TRUE`, the pegs are shown.
+#' @param show_labels Logical. If `TRUE`, peg labels are shown.
+#' @param verbose Logical. If `TRUE`, an audit summary is printed to the console.
+#' @param r Positive number. Radius of the circle. Defaults to `1`.
+#' @param show_strings Logical. If `TRUE`, string segments are drawn.
+#' @param template Logical. If `TRUE`, only the peg template is drawn. This sets
+#'   `show_strings = FALSE` and `show_points = TRUE` internally.
+#' @param point_col Color of the pegs.
+#' @param point_cex Positive number. Size of the pegs.
+#' @param point_pch Plotting symbol used for the pegs.
+#' @param point_bg Background color of the pegs when the plotting symbol allows
+#'   filling.
+#' @param label_cex Positive number. Size of the peg labels.
+#' @param label_col Color of the peg labels.
+#' @param border_col Color of the circular border.
+#' @param border_lwd Positive number. Line width of the circular border.
+#' @param main Character string. Plot title. If `NULL`, a default title is used.
 #'
 #' @details
-#' A construção posiciona os pregos sobre uma circunferência de raio `r`,
-#' centrada em `(0, 0)`, numerando-os de `1` a `n` no sentido anti-horário,
-#' a partir do ponto `(r, 0)`.
+#' Pegs are numbered from `1` to `n` counterclockwise, starting at `(r, 0)`.
+#' For each peg `i`, the connected peg is defined by
 #'
-#' A regra de conexão é auditável e dada por
-#' `j <- (i + k - 1) %% n + 1`,
-#' ou seja, cada prego `i` é ligado ao prego `k` posições à frente.
+#' \deqn{j = ((i + k - 1) \bmod n) + 1.}
 #'
-#' Quando `mdc(n, k) = 1`, a figura percorre todos os pregos em um único ciclo.
-#' Quando `mdc(n, k) > 1`, a construção se decompõe em ciclos independentes,
-#' ainda obedecendo exatamente à mesma regra modular.
+#' When `gcd(n, k) = 1`, the rule creates a single cycle passing through all
+#' pegs. When `gcd(n, k) > 1`, the figure is decomposed into independent cycles.
 #'
-#' @return Invisivelmente, uma lista com:
+#' @return Invisibly returns a list with the following elements:
 #' \describe{
-#'   \item{pregos}{`data.frame` com as colunas `indice`, `x` e `y`.}
-#'   \item{conexoes}{`data.frame` com as colunas `prego_inicial`,
-#'   `prego_final`, `x_inicial`, `y_inicial`, `x_final`, `y_final`
-#'   e `comprimento`.}
-#'   \item{comprimento_total}{Número com o comprimento total do barbante.}
+#'   \item{pegs}{A data frame with columns `index`, `x`, and `y`.}
+#'   \item{connections}{A data frame with columns `connection_index`, `from`,
+#'   `to`, `x_from`, `y_from`, `x_to`, `y_to`, and `length`.}
+#'   \item{total_length}{Total string length.}
+#'   \item{audit}{Character vector with an audit summary.}
+#'   \item{meta}{List with metadata about the construction.}
 #' }
 #'
 #' @examples
-#' # Exemplo básico
-#' stcircle(n = 20, k = 3, r = 1, col = "blue", lwd = 1.2)
+#' stcircle()
 #'
-#' # Exemplo com rótulos dos pregos
-#' stcircle(
-#'   n = 12, k = 5, r = 1,
-#'   col = "firebrick", lwd = 1,
-#'   show_labels = TRUE
-#' )
+#' res <- stcircle(plot = FALSE)
+#' res$total_length
+#' head(res$connections)
 #'
-#' # Exemplo sem plot
-#' res <- stcircle(
-#'   n = 10, k = 2, r = 1,
-#'   col = "darkgreen", lwd = 1,
-#'   plot = FALSE, verbose = FALSE
-#' )
-#' res$comprimento_total
-#' head(res$pregos)
-#' head(res$conexoes)
+#' stcircle(n = 24, k = 7, col = "firebrick", lwd = 1.2,
+#'          show_points = TRUE, show_labels = TRUE)
 #'
-#' @importFrom graphics plot points segments lines text
+#' stcircle(n = 24, k = 7, template = TRUE)
+#'
+#' @importFrom graphics lines plot points segments text
 #' @export
-stcircle <- function(n = 20, k = 3, r = 1,
-                     col = "blue", lwd = 1,
+stcircle <- function(n = 30,
+                     k = 5,
+                     col = "blue",
+                     lwd = 1,
                      plot = TRUE,
                      show_points = TRUE,
-                     cex_pregos = 0.8,
-                     col_pregos = "black",
                      show_labels = FALSE,
-                     cex_labels = 0.7,
+                     verbose = FALSE,
+                     r = 1,
+                     show_strings = TRUE,
+                     template = FALSE,
+                     point_col = "black",
+                     point_cex = 0.8,
+                     point_pch = 19,
+                     point_bg = "white",
+                     label_cex = 0.7,
                      label_col = "black",
-                     verbose = TRUE) {
+                     border_col = "grey50",
+                     border_lwd = 1,
+                     main = NULL) {
 
-  #---------------------------------------------------------------------------
-  # Input checks
-  #---------------------------------------------------------------------------
+  # ---------------------------------------------------------------------------
+  # Validation
+  # ---------------------------------------------------------------------------
   if (!is.numeric(n) || length(n) != 1L || is.na(n) ||
       n != as.integer(n) || n < 3L) {
-    stop("`n` must be a single integer greater than or equal to 3.")
+    stop("`n` must be a single integer greater than or equal to 3.",
+         call. = FALSE)
   }
 
   if (!is.numeric(k) || length(k) != 1L || is.na(k) ||
       k != as.integer(k) || k < 1L) {
-    stop("`k` must be a single positive integer.")
-  }
-
-  if (!is.numeric(r) || length(r) != 1L || is.na(r) || r <= 0) {
-    stop("`r` must be a single positive number.")
-  }
-
-  if (!is.numeric(lwd) || length(lwd) != 1L || is.na(lwd) || lwd <= 0) {
-    stop("`lwd` must be a single positive number.")
-  }
-
-  if (!is.logical(plot) || length(plot) != 1L || is.na(plot)) {
-    stop("`plot` must be TRUE or FALSE.")
-  }
-
-  if (!is.logical(show_points) || length(show_points) != 1L || is.na(show_points)) {
-    stop("`show_points` must be TRUE or FALSE.")
-  }
-
-  if (!is.logical(show_labels) || length(show_labels) != 1L || is.na(show_labels)) {
-    stop("`show_labels` must be TRUE or FALSE.")
-  }
-
-  if (!is.logical(verbose) || length(verbose) != 1L || is.na(verbose)) {
-    stop("`verbose` must be TRUE or FALSE.")
-  }
-
-  if (!is.numeric(cex_pregos) || length(cex_pregos) != 1L ||
-      is.na(cex_pregos) || cex_pregos <= 0) {
-    stop("`cex_pregos` must be a single positive number.")
-  }
-
-  if (!is.numeric(cex_labels) || length(cex_labels) != 1L ||
-      is.na(cex_labels) || cex_labels <= 0) {
-    stop("`cex_labels` must be a single positive number.")
+    stop("`k` must be a single positive integer.", call. = FALSE)
   }
 
   n <- as.integer(n)
   k <- as.integer(k)
 
   if (k >= n) {
-    stop("`k` must satisfy 1 <= k <= n - 1.")
+    stop("`k` must satisfy 1 <= k <= n - 1.", call. = FALSE)
   }
 
-  #---------------------------------------------------------------------------
-  # Auxiliary function
-  #---------------------------------------------------------------------------
-  gcd_int <- function(a, b) {
-    a <- abs(as.integer(a))
-    b <- abs(as.integer(b))
+  if (!is.numeric(r) || length(r) != 1L || is.na(r) || r <= 0) {
+    stop("`r` must be a single positive number.", call. = FALSE)
+  }
+
+  if (!is.numeric(lwd) || length(lwd) != 1L || is.na(lwd) || lwd <= 0) {
+    stop("`lwd` must be a single positive number.", call. = FALSE)
+  }
+
+  if (!is.numeric(border_lwd) || length(border_lwd) != 1L ||
+      is.na(border_lwd) || border_lwd <= 0) {
+    stop("`border_lwd` must be a single positive number.", call. = FALSE)
+  }
+
+  if (!is.numeric(point_cex) || length(point_cex) != 1L ||
+      is.na(point_cex) || point_cex <= 0) {
+    stop("`point_cex` must be a single positive number.", call. = FALSE)
+  }
+
+  if (!is.numeric(label_cex) || length(label_cex) != 1L ||
+      is.na(label_cex) || label_cex <= 0) {
+    stop("`label_cex` must be a single positive number.", call. = FALSE)
+  }
+
+  logical_args <- list(
+    plot = plot,
+    show_points = show_points,
+    show_labels = show_labels,
+    verbose = verbose,
+    show_strings = show_strings,
+    template = template
+  )
+
+  for (arg_name in names(logical_args)) {
+    value <- logical_args[[arg_name]]
+    if (!is.logical(value) || length(value) != 1L || is.na(value)) {
+      stop("`", arg_name, "` must be TRUE or FALSE.", call. = FALSE)
+    }
+  }
+
+  if (template) {
+    show_strings <- FALSE
+    show_points <- TRUE
+  }
+
+  # ---------------------------------------------------------------------------
+  # Geometry
+  # ---------------------------------------------------------------------------
+  theta <- seq(0, 2 * pi, length.out = n + 1L)[-(n + 1L)]
+
+  pegs <- data.frame(
+    index = seq_len(n),
+    x = r * cos(theta),
+    y = r * sin(theta)
+  )
+
+  from <- seq_len(n)
+  to <- ((from + k - 1L) %% n) + 1L
+
+  connections <- data.frame(
+    connection_index = seq_len(n),
+    from = from,
+    to = to,
+    x_from = pegs$x[from],
+    y_from = pegs$y[from],
+    x_to = pegs$x[to],
+    y_to = pegs$y[to]
+  )
+
+  connections$length <- sqrt(
+    (connections$x_to - connections$x_from)^2 +
+      (connections$y_to - connections$y_from)^2
+  )
+
+  total_length <- sum(connections$length)
+
+  gcd_value <- local({
+    a <- n
+    b <- k
     while (b != 0L) {
       tmp <- b
       b <- a %% b
       a <- tmp
     }
     a
-  }
+  })
 
-  #---------------------------------------------------------------------------
-  # Nail positions
-  #---------------------------------------------------------------------------
-  theta <- seq(0, 2 * pi, length.out = n + 1L)[-(n + 1L)]
+  cycle_count <- gcd_value
+  cycle_length <- n / gcd_value
 
-  pregos <- data.frame(
-    indice = seq_len(n),
-    x = r * cos(theta),
-    y = r * sin(theta)
+  audit <- c(
+    "String Art audit",
+    "Figure: circle",
+    sprintf("Number of pegs: %d", n),
+    sprintf("Step k: %d", k),
+    sprintf("Radius: %.6f", r),
+    "Rule: to = ((from + k - 1) %% n) + 1",
+    sprintf("Number of connections: %d", nrow(connections)),
+    sprintf("Cycle count: %d", cycle_count),
+    sprintf("Cycle length: %d", cycle_length),
+    sprintf("Total string length: %.6f", total_length),
+    if (show_strings) {
+      "Plot mode: complete figure"
+    } else {
+      "Plot mode: peg template without strings"
+    }
   )
 
-  #---------------------------------------------------------------------------
-  # Connections following the modular jump rule
-  #---------------------------------------------------------------------------
-  prego_inicial <- seq_len(n)
-  prego_final <- ((prego_inicial + k - 1L) %% n) + 1L
-
-  conexoes <- data.frame(
-    prego_inicial = prego_inicial,
-    prego_final = prego_final,
-    x_inicial = pregos$x[prego_inicial],
-    y_inicial = pregos$y[prego_inicial],
-    x_final = pregos$x[prego_final],
-    y_final = pregos$y[prego_final]
+  meta <- list(
+    figure = "circle",
+    rule = "additive modular step",
+    n = n,
+    k = k,
+    r = r,
+    cycle_count = cycle_count,
+    cycle_length = cycle_length,
+    plot = plot,
+    show_points = show_points,
+    show_labels = show_labels,
+    show_strings = show_strings,
+    template = template,
+    string_color = col,
+    string_lwd = lwd
   )
 
-  conexoes$comprimento <- sqrt(
-    (conexoes$x_final - conexoes$x_inicial)^2 +
-      (conexoes$y_final - conexoes$y_inicial)^2
-  )
-
-  comprimento_total <- sum(conexoes$comprimento)
-
-  #---------------------------------------------------------------------------
+  # ---------------------------------------------------------------------------
   # Plot
-  #---------------------------------------------------------------------------
+  # ---------------------------------------------------------------------------
   if (plot) {
-    margem <- 0.15 * r
-    lims <- c(-r - margem, r + margem)
+    if (is.null(main)) {
+      main <- sprintf("Circular String Art (n = %d, k = %d)", n, k)
+    }
+
+    lim <- r * 1.18
 
     graphics::plot(
-      NA, NA,
-      xlim = lims, ylim = lims,
+      NA,
+      xlim = c(-lim, lim),
+      ylim = c(-lim, lim),
       asp = 1,
-      xlab = "", ylab = "",
-      axes = FALSE
+      axes = FALSE,
+      xlab = "",
+      ylab = "",
+      main = main
     )
 
-    # Circumference outline
-    tt <- seq(0, 2 * pi, length.out = 500L)
-    graphics::lines(r * cos(tt), r * sin(tt), col = "grey80", lty = 3)
+    border_theta <- seq(0, 2 * pi, length.out = 361L)
 
-    # String connections
-    graphics::segments(
-      x0 = conexoes$x_inicial,
-      y0 = conexoes$y_inicial,
-      x1 = conexoes$x_final,
-      y1 = conexoes$y_final,
-      col = col,
-      lwd = lwd
+    graphics::lines(
+      r * cos(border_theta),
+      r * sin(border_theta),
+      col = border_col,
+      lwd = border_lwd
     )
 
-    # Nails
-    if (show_points) {
-      graphics::points(
-        pregos$x, pregos$y,
-        pch = 19,
-        cex = cex_pregos,
-        col = col_pregos
+    if (show_strings) {
+      graphics::segments(
+        connections$x_from,
+        connections$y_from,
+        connections$x_to,
+        connections$y_to,
+        col = col,
+        lwd = lwd
       )
     }
 
-    # Labels
+    if (show_points) {
+      graphics::points(
+        pegs$x,
+        pegs$y,
+        pch = point_pch,
+        col = point_col,
+        bg = point_bg,
+        cex = point_cex
+      )
+    }
+
     if (show_labels) {
-      fator_rotulo <- 1.08
+      label_radius <- r * 1.08
+
       graphics::text(
-        x = fator_rotulo * pregos$x,
-        y = fator_rotulo * pregos$y,
-        labels = pregos$indice,
-        cex = cex_labels,
+        label_radius * cos(theta),
+        label_radius * sin(theta),
+        labels = pegs$index,
+        cex = label_cex,
         col = label_col
       )
     }
   }
 
-  #---------------------------------------------------------------------------
-  # Verbose output
-  #---------------------------------------------------------------------------
   if (verbose) {
-    message(sprintf(
-      "Total string length: %.4f units.",
-      comprimento_total
-    ))
-
-    d <- gcd_int(n, k)
-    if (d == 1L) {
-      message("The modular rule generates a single cycle through all nails.")
-    } else {
-      message(sprintf(
-        "The modular rule generates %d independent cycles (gcd(n, k) = %d).",
-        d, d
-      ))
-    }
+    cat(paste(audit, collapse = "\n"), "\n")
   }
 
-  #---------------------------------------------------------------------------
-  # Invisible return
-  #---------------------------------------------------------------------------
-  invisible(list(
-    pregos = pregos,
-    conexoes = conexoes,
-    comprimento_total = comprimento_total
-  ))
+  result <- list(
+    pegs = pegs,
+    connections = connections,
+    total_length = total_length,
+    audit = audit,
+    meta = meta
+  )
+
+  invisible(result)
 }
