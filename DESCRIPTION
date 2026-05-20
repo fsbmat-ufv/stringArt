@@ -4,16 +4,16 @@ Version: 0.1.0
 Authors@R: 
     c(
         person(
+            given = "Fernando",
+            family = "de Souza Bastos",
+            email = "fernando.bastos@ufv.br",
+            role = c("aut", "cre")
+        ),
+        person(
             given = "Ivo",
             family = "Moreira Barbosa",
             email = "ivo.barbosa@ufv.br",
             role = "aut"
-        ),
-        person(
-            given = "Fernando",
-            family = "de Souza Bastos",
-            email = "fernando@ufv.br",
-            role = c("aut", "cre")
         )
     )
 Description: Provides tools to generate, visualize, and audit geometric
