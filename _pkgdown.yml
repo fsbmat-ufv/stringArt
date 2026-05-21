@@ -1,0 +1,47 @@
+url: https://fsbmat-ufv.github.io/stringArt/
+
+template:
+  bootstrap: 5
+
+navbar:
+  structure:
+    left: [intro, reference, articles, app, news]
+    right: [github]
+  components:
+    intro:
+      text: Get started
+      href: articles/stringArt-introduction.html
+    app:
+      text: Shiny app
+      href: reference/run_stringArt_app.html
+
+reference:
+  - title: Interactive application
+    contents:
+      - run_stringArt_app
+
+  - title: Circular and modular figures
+    contents:
+      - stcircle
+      - stcardioid
+      - stdecimal
+      - stspiral
+      - strose
+      - ststar
+      - stpolygon
+
+  - title: Curves, regions, and grids
+    contents:
+      - stellipse
+      - stparabola
+      - stlissajous
+      - stregion
+      - stgrid
+      - stnet
+
+  - title: Polygonal and radial figures
+    contents:
+      - sttriangle
+      - sthexaflower
+      - stradial
+      - stlotus

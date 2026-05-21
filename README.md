@@ -1,5 +1,5 @@
 
-# stringArt <img src="man/figures/logo.png" align="right" width="120" />
+# stringArt <img src="man/figures/logo.png" align="right" height="140" alt="stringArt logo" />
 
 <!-- badges: start -->
 

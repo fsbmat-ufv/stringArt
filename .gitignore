@@ -5,3 +5,5 @@
 .DS_Store
 .quarto
 CriacaoPacote.R
+/doc/
+/Meta/

@@ -36,5 +36,14 @@ Depends:
 Imports:
     graphics
 Suggests:
-    testthat (>= 3.0.0)
+    shiny,
+    shinydashboard,
+    colourpicker,
+    DT,
+    markdown,
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0),
+    pkgdown
+VignetteBuilder: knitr
 Config/testthat/edition: 3
